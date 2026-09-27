@@ -1,4 +1,6 @@
-const DEFAULT_MIME_TYPES = Object.freeze([
+const AUDIO_CODEC_PATTERN = /(?:^|[,\s])(?:opus|mp4a|aac)(?:$|[,\s])/i;
+
+const AUDIO_VIDEO_MIME_TYPES = Object.freeze([
   'video/webm;codecs=vp9,opus',
   'video/webm;codecs=vp8,opus',
   'video/webm;codecs=h264,opus',
@@ -6,7 +8,17 @@ const DEFAULT_MIME_TYPES = Object.freeze([
   'video/mp4'
 ]);
 
+const VIDEO_ONLY_MIME_TYPES = Object.freeze([
+  'video/webm;codecs=vp8',
+  'video/webm;codecs=vp9',
+  'video/webm;codecs=h264',
+  'video/webm',
+  'video/mp4'
+]);
+
+export const DEFAULT_MIME_TYPES = VIDEO_ONLY_MIME_TYPES;
 export const DEFAULT_RECORDING_LIMIT_MS = 15000;
+export const DEFAULT_STOP_PENDING_TIMEOUT_MS = 3000;
 
 export function getCaptureSupport(environment = globalThis) {
   const navigatorRef = environment.navigator;
@@ -36,13 +48,95 @@ export function getCaptureSupport(environment = globalThis) {
   };
 }
 
-export function chooseSupportedMimeType(mediaRecorder, candidates = DEFAULT_MIME_TYPES) {
+export function mimeTypeDeclaresAudio(type) {
+  return AUDIO_CODEC_PATTERN.test(String(type ?? ''));
+}
+
+export function streamHasAudioTracks(stream) {
+  return (stream?.getAudioTracks?.() ?? []).length > 0;
+}
+
+export function chooseSupportedMimeType(mediaRecorder, options = {}) {
   const isTypeSupported = mediaRecorder?.isTypeSupported;
   if (typeof isTypeSupported !== 'function') {
     return '';
   }
 
-  return candidates.find((type) => isTypeSupported.call(mediaRecorder, type)) ?? '';
+  const normalizedOptions = Array.isArray(options) ? { candidates: options } : options;
+  const hasAudio = Boolean(normalizedOptions.hasAudio);
+  const candidates = normalizedOptions.candidates
+    ?? (hasAudio ? AUDIO_VIDEO_MIME_TYPES : VIDEO_ONLY_MIME_TYPES);
+  const safeCandidates = hasAudio
+    ? candidates
+    : candidates.filter((type) => !mimeTypeDeclaresAudio(type));
+
+  return safeCandidates.find((type) => isTypeSupported.call(mediaRecorder, type)) ?? '';
+}
+
+export function isCurrentRecordingSession(sessionId, {
+  activeSessionId,
+  cleanupSessionId = 0,
+  pendingTimeoutSessionId = 0
+} = {}) {
+  return Number.isInteger(sessionId)
+    && sessionId === activeSessionId
+    && sessionId > cleanupSessionId
+    && sessionId !== pendingTimeoutSessionId;
+}
+
+export function isCurrentRecorderStopEvent({
+  sessionId,
+  recorder,
+  activeRecorder,
+  activeSessionId,
+  cleanupSessionId = 0,
+  pendingTimeoutSessionId = 0
+} = {}) {
+  return activeRecorder === recorder
+    && isCurrentRecordingSession(sessionId, {
+      activeSessionId,
+      cleanupSessionId,
+      pendingTimeoutSessionId
+    });
+}
+
+export function createStopPendingWatchdog({
+  setTimeout: setTimer = globalThis.setTimeout,
+  clearTimeout: clearTimer = globalThis.clearTimeout,
+  timeoutMs = DEFAULT_STOP_PENDING_TIMEOUT_MS,
+  onTimeout = () => {}
+} = {}) {
+  let timer = null;
+  let pendingSessionId = 0;
+
+  return {
+    get pendingSessionId() {
+      return pendingSessionId;
+    },
+    arm(sessionId) {
+      this.cancel();
+      pendingSessionId = sessionId;
+      timer = setTimer(() => {
+        const timedOutSessionId = pendingSessionId;
+        timer = null;
+        pendingSessionId = 0;
+        onTimeout(timedOutSessionId);
+      }, timeoutMs);
+      return sessionId;
+    },
+    cancel(sessionId) {
+      if (sessionId !== undefined && pendingSessionId !== sessionId) {
+        return false;
+      }
+      const hadPendingSession = pendingSessionId !== 0;
+      if (timer !== null) {
+        clearTimer(timer);
+      }
+      timer = null;
+      pendingSessionId = 0;
+      return hadPendingSession;
+    }
+  };
 }
 
 export function normalizeCustomLabel(value) {

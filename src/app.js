@@ -13,15 +13,19 @@ import {
 } from './lessons.mjs';
 import {
   DEFAULT_RECORDING_LIMIT_MS,
+  DEFAULT_STOP_PENDING_TIMEOUT_MS,
   buildCaptureMetadata,
   chooseSupportedMimeType,
   createMetadataBlob,
   createSafeFileStem,
   freezeResolvedLabel,
   getCaptureSupport,
+  isCurrentRecorderStopEvent,
+  isCurrentRecordingSession,
   isResolvedLabelValid,
   resolveCaptureLabel,
-  stopStreamTracks
+  stopStreamTracks,
+  streamHasAudioTracks
 } from './capture.mjs';
 
 const form = document.querySelector('#lookup-form');
@@ -67,6 +71,8 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let recordingStartedAt = null;
 let recordingLimitTimer = null;
+let stopPendingTimer = null;
+let stopPendingSessionId = 0;
 let recordingObjectUrl = null;
 let metadataObjectUrl = null;
 let selectedMimeType = '';
@@ -74,6 +80,7 @@ let recorderFailed = false;
 let activeRecordingLabel = null;
 let recordingSessionId = 0;
 let cleanupSessionId = 0;
+let timedOutSessionId = 0;
 let captureIsSupported = false;
 
 function createElement(tagName, className, text) {
@@ -377,21 +384,69 @@ function currentResolvedLabel() {
 
 function syncCaptureButtons() {
   const labelIsReady = isResolvedLabelValid(currentResolvedLabel());
-  startRecordingButton.disabled = !captureIsSupported || !activeStream || mediaRecorder?.state === 'recording' || !labelIsReady;
-  stopRecordingButton.disabled = mediaRecorder?.state !== 'recording';
-  startCameraButton.disabled = !captureIsSupported || mediaRecorder?.state === 'recording';
+  const recorderIsBusy = mediaRecorder?.state === 'recording' || stopPendingSessionId !== 0;
+  startRecordingButton.disabled = !captureIsSupported || !activeStream || recorderIsBusy || !labelIsReady;
+  stopRecordingButton.disabled = mediaRecorder?.state !== 'recording' || stopPendingSessionId !== 0;
+  startCameraButton.disabled = !captureIsSupported || recorderIsBusy;
+}
+
+function clearRecordingLimitTimer() {
+  window.clearTimeout(recordingLimitTimer);
+  recordingLimitTimer = null;
+}
+
+function cancelStopPendingWatchdog() {
+  window.clearTimeout(stopPendingTimer);
+  stopPendingTimer = null;
+  stopPendingSessionId = 0;
+}
+
+function armStopPendingWatchdog(sessionId, recorder) {
+  window.clearTimeout(stopPendingTimer);
+  stopPendingSessionId = sessionId;
+  stopPendingTimer = window.setTimeout(() => {
+    if (!isCurrentRecordingSession(sessionId, {
+      activeSessionId: recordingSessionId,
+      cleanupSessionId,
+      pendingTimeoutSessionId: timedOutSessionId
+    })) {
+      cancelStopPendingWatchdog();
+      syncCaptureButtons();
+      return;
+    }
+
+    timedOutSessionId = sessionId;
+    cleanupSessionId = Math.max(cleanupSessionId, sessionId);
+    if (mediaRecorder === recorder) {
+      mediaRecorder = null;
+    }
+    clearRecordingLimitTimer();
+    cancelStopPendingWatchdog();
+    recordingStartedAt = null;
+    activeRecordingLabel = null;
+    recorderFailed = false;
+    recordedChunks = [];
+    setCaptureStatus('El navegador no confirmó el final de la grabación. No se preparó un clip parcial; reiniciá la cámara o probá otro navegador.');
+    syncCaptureButtons();
+  }, DEFAULT_STOP_PENDING_TIMEOUT_MS);
 }
 
 function safeStopRecorder(statusMessage) {
   if (mediaRecorder?.state !== 'recording') {
-    return false;
+    return stopPendingSessionId !== 0;
   }
 
+  const recorder = mediaRecorder;
+  const sessionId = recordingSessionId;
+
   try {
-    mediaRecorder.stop();
+    recorder.stop();
+    clearRecordingLimitTimer();
+    armStopPendingWatchdog(sessionId, recorder);
     if (statusMessage) {
       setCaptureStatus(statusMessage);
     }
+    syncCaptureButtons();
     return true;
   } catch {
     recorderFailed = true;
@@ -399,8 +454,8 @@ function safeStopRecorder(statusMessage) {
     recordingStartedAt = null;
     activeRecordingLabel = null;
     recordedChunks = [];
-    window.clearTimeout(recordingLimitTimer);
-    recordingLimitTimer = null;
+    clearRecordingLimitTimer();
+    cancelStopPendingWatchdog();
     setCaptureStatus('El navegador no pudo detener la grabación correctamente. No se preparó ningún clip.');
     syncCaptureButtons();
     return false;
@@ -493,23 +548,26 @@ async function startCamera() {
   }
 }
 
-function finishRecording(sessionId) {
-  window.clearTimeout(recordingLimitTimer);
-  recordingLimitTimer = null;
+function finishRecording(sessionId, recorder) {
+  if (!isCurrentRecorderStopEvent({
+    sessionId,
+    recorder,
+    activeRecorder: mediaRecorder,
+    activeSessionId: recordingSessionId,
+    cleanupSessionId,
+    pendingTimeoutSessionId: timedOutSessionId
+  })) {
+    return;
+  }
 
-  const cleanedUp = sessionId !== recordingSessionId || sessionId <= cleanupSessionId;
+  clearRecordingLimitTimer();
+  cancelStopPendingWatchdog();
+
   const resolvedLabel = activeRecordingLabel;
   const startedAt = recordingStartedAt;
   mediaRecorder = null;
   recordingStartedAt = null;
   activeRecordingLabel = null;
-
-  if (cleanedUp) {
-    recordedChunks = [];
-    recorderFailed = false;
-    syncCaptureButtons();
-    return;
-  }
 
   if (recorderFailed || recordedChunks.length === 0 || !isResolvedLabelValid(resolvedLabel)) {
     recordedChunks = [];
@@ -566,8 +624,9 @@ function startRecording() {
   resetRecordedPreview();
   recordedChunks = [];
   activeRecordingLabel = recordingLabel;
-  selectedMimeType = chooseSupportedMimeType(MediaRecorder);
+  selectedMimeType = chooseSupportedMimeType(MediaRecorder, { hasAudio: streamHasAudioTracks(activeStream) });
   recorderFailed = false;
+  timedOutSessionId = 0;
   const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
 
   try {
@@ -580,16 +639,29 @@ function startRecording() {
     return;
   }
 
+  const recorder = mediaRecorder;
   const sessionId = recordingSessionId + 1;
-  mediaRecorder.addEventListener('dataavailable', (event) => {
-    if (event.data?.size > 0) {
+  recorder.addEventListener('dataavailable', (event) => {
+    if (mediaRecorder === recorder && isCurrentRecordingSession(sessionId, {
+      activeSessionId: recordingSessionId,
+      cleanupSessionId,
+      pendingTimeoutSessionId: timedOutSessionId
+    }) && event.data?.size > 0) {
       recordedChunks.push(event.data);
     }
   });
-  mediaRecorder.addEventListener('stop', () => finishRecording(sessionId), { once: true });
-  mediaRecorder.addEventListener('error', () => {
-    window.clearTimeout(recordingLimitTimer);
-    recordingLimitTimer = null;
+  recorder.addEventListener('stop', () => finishRecording(sessionId, recorder), { once: true });
+  recorder.addEventListener('error', () => {
+    if (mediaRecorder !== recorder || !isCurrentRecordingSession(sessionId, {
+      activeSessionId: recordingSessionId,
+      cleanupSessionId,
+      pendingTimeoutSessionId: timedOutSessionId
+    })) {
+      return;
+    }
+
+    clearRecordingLimitTimer();
+    cancelStopPendingWatchdog();
     recorderFailed = true;
     const stopped = safeStopRecorder('La grabación falló. No se guardó el clip; probá de nuevo con un clip más corto.');
     if (!stopped) {
@@ -618,7 +690,11 @@ function startRecording() {
   }
 
   recordingLimitTimer = window.setTimeout(() => {
-    if (mediaRecorder?.state === 'recording') {
+    if (mediaRecorder === recorder && recorder.state === 'recording' && isCurrentRecordingSession(sessionId, {
+      activeSessionId: recordingSessionId,
+      cleanupSessionId,
+      pendingTimeoutSessionId: timedOutSessionId
+    })) {
       safeStopRecorder('Se alcanzó el límite de 15 segundos y la grabación se detuvo automáticamente.');
     }
   }, DEFAULT_RECORDING_LIMIT_MS);
@@ -632,8 +708,8 @@ function stopRecording() {
 
 function cleanupCapture() {
   cleanupSessionId = recordingSessionId;
-  window.clearTimeout(recordingLimitTimer);
-  recordingLimitTimer = null;
+  clearRecordingLimitTimer();
+  cancelStopPendingWatchdog();
   safeStopRecorder();
   stopStreamTracks(activeStream);
   activeStream = null;
