@@ -1,0 +1,5 @@
+# Local Pi runtime state
+.atl/
+
+# Private creator media kept outside version control.
+/videos/
