@@ -9,6 +9,7 @@
   --brand-strong: #5c2916;
   --accent: #f3b44b;
   --line: #e4d6c3;
+  --success: #256a4d;
   --warning-bg: #fff4d6;
   --warning-ink: #6f4c00;
   --danger: #8b1f1f;
@@ -31,6 +32,10 @@ body {
     radial-gradient(circle at top left, rgb(243 180 75 / 28%), transparent 32rem),
     linear-gradient(180deg, #fff9ee 0%, var(--bg) 48%, #efe4d4 100%);
   color: var(--ink);
+}
+
+a {
+  color: inherit;
 }
 
 button,
@@ -89,15 +94,20 @@ main {
 }
 
 .brand,
-.skip-link {
+.skip-link,
+.nav-links {
   color: inherit;
   font-weight: 850;
 }
 
-.brand {
+.brand,
+.nav-links {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.brand {
   text-decoration: none;
 }
 
@@ -112,12 +122,17 @@ main {
   letter-spacing: 0.04em;
 }
 
-.skip-link {
+.skip-link,
+.nav-links a {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgb(255 255 255 / 68%);
   padding: 0.65rem 0.9rem;
   text-decoration: none;
+}
+
+.nav-links {
+  display: none;
 }
 
 .hero-copy {
@@ -216,7 +231,9 @@ input {
 }
 
 .input-row button,
-.playback-controls button {
+.playback-controls button,
+.lesson-actions button,
+.practice-options button {
   padding: 0 1.1rem;
 }
 
@@ -227,7 +244,9 @@ input {
 
 .examples,
 .token-list,
-.playback-controls {
+.playback-controls,
+.lesson-actions,
+.practice-options {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -256,15 +275,18 @@ input {
 }
 
 .card-grid,
-.category-list {
+.category-list,
+.lesson-list {
   display: grid;
   gap: 0.9rem;
 }
 
 .sign-card,
 .category-card,
+.lesson-card,
 .unknown-panel,
 .playback-panel,
+.practice-panel,
 .note-panel {
   border: 1px solid var(--line);
   border-radius: 1.2rem;
@@ -273,13 +295,18 @@ input {
 
 .sign-card,
 .category-card,
+.lesson-card,
 .unknown-panel,
-.playback-panel {
+.playback-panel,
+.practice-panel {
   padding: 1rem;
 }
 
 .sign-card,
-.playback-panel {
+.playback-panel,
+.lesson-card,
+.practice-panel,
+.practice-card {
   display: grid;
   gap: 0.85rem;
 }
@@ -349,14 +376,37 @@ input {
   font-size: 0.95rem;
 }
 
-.category-card ul {
+.category-card ul,
+.lesson-card ul {
   display: grid;
   gap: 0.45rem;
   margin: 0;
   padding-left: 1.2rem;
 }
 
+.lesson-card.is-active {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgb(139 63 31 / 14%);
+}
+
+.practice-panel {
+  margin-top: 1rem;
+  background: #fffef9;
+}
+
+.practice-card:empty {
+  display: none;
+}
+
+.practice-options button[aria-pressed="true"] {
+  background: var(--success);
+}
+
 @media (min-width: 720px) {
+  .nav-links {
+    display: inline-flex;
+  }
+
   .input-row {
     grid-template-columns: 1fr auto;
   }
@@ -365,7 +415,8 @@ input {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .category-list {
+  .category-list,
+  .lesson-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

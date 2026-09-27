@@ -5,6 +5,12 @@ import {
   getPlayableSequence,
   lookupText
 } from './catalog.mjs';
+import {
+  answerPracticeStep,
+  buildBeginnerLessons,
+  createPracticeSession,
+  getPracticePrompt
+} from './lessons.mjs';
 
 const form = document.querySelector('#lookup-form');
 const input = document.querySelector('#lookup-input');
@@ -19,7 +25,14 @@ const sequenceVideo = document.querySelector('#sequence-video');
 const previousVideoButton = document.querySelector('#previous-video');
 const playCurrentVideoButton = document.querySelector('#play-current-video');
 const nextVideoButton = document.querySelector('#next-video');
+const lessonList = document.querySelector('#lesson-list');
+const practiceTitle = document.querySelector('#practice-title');
+const practiceStatus = document.querySelector('#practice-status');
+const practiceCard = document.querySelector('#practice-card');
 
+const beginnerLessons = buildBeginnerLessons(STARTER_CATALOG);
+let selectedLesson = beginnerLessons[0] ?? null;
+let practiceSession = selectedLesson ? createPracticeSession(selectedLesson) : null;
 let playbackSequence = [];
 let currentPlaybackIndex = 0;
 let skippedVideoCount = 0;
@@ -204,6 +217,108 @@ function renderCatalog() {
   }
 }
 
+function selectLesson(lesson) {
+  selectedLesson = lesson;
+  practiceSession = createPracticeSession(lesson);
+  renderLessons();
+  renderPractice();
+}
+
+function renderLessons() {
+  clearChildren(lessonList);
+
+  for (const lesson of beginnerLessons) {
+    const card = createElement('article', 'lesson-card');
+    if (lesson.id === selectedLesson?.id) {
+      card.classList.add('is-active');
+    }
+
+    card.appendChild(createElement('p', 'eyebrow', `Lección ${lesson.position}`));
+    card.appendChild(createElement('h3', null, lesson.title));
+    card.appendChild(createElement('p', 'meta', lesson.summary));
+
+    const list = document.createElement('ul');
+    for (const entry of lesson.entries) {
+      const item = document.createElement('li');
+      item.textContent = entry.displayLabel;
+      list.appendChild(item);
+    }
+    card.appendChild(list);
+    card.appendChild(createElement('p', 'unavailable', lesson.validationNote));
+
+    const actions = createElement('div', 'lesson-actions');
+    const startButton = createElement('button', null, lesson.id === selectedLesson?.id ? 'Reiniciar práctica' : 'Practicar esta categoría');
+    startButton.type = 'button';
+    startButton.addEventListener('click', () => selectLesson(lesson));
+    actions.appendChild(startButton);
+    card.appendChild(actions);
+
+    lessonList.appendChild(card);
+  }
+}
+
+function renderPracticeFeedback() {
+  if (!practiceSession?.lastResult) {
+    return;
+  }
+
+  const message = practiceSession.lastResult.correct
+    ? 'Respuesta correcta. Avanzaste al siguiente paso.'
+    : 'Todavía no. Probá de nuevo con la misma etiqueta.';
+  practiceCard.appendChild(createElement('p', 'summary', message));
+}
+
+function renderPractice() {
+  clearChildren(practiceCard);
+
+  if (!selectedLesson || !practiceSession) {
+    practiceTitle.textContent = 'Elegí una lección para practicar';
+    practiceStatus.textContent = 'No se guarda progreso fuera de esta pestaña.';
+    return;
+  }
+
+  practiceTitle.textContent = selectedLesson.title;
+
+  if (practiceSession.completed) {
+    practiceStatus.textContent = `Completaste ${practiceSession.correctCount} paso(s) en esta sesión. Este resultado no queda guardado.`;
+    practiceCard.appendChild(createElement(
+      'p',
+      'unavailable',
+      'La práctica termina solo en memoria de esta pestaña. Recargar la página reinicia el avance.'
+    ));
+    const restartButton = createElement('button', null, 'Reiniciar práctica');
+    restartButton.type = 'button';
+    restartButton.addEventListener('click', () => selectLesson(selectedLesson));
+    practiceCard.appendChild(restartButton);
+    return;
+  }
+
+  const prompt = getPracticePrompt(practiceSession, selectedLesson);
+  if (!prompt) {
+    practiceStatus.textContent = 'No hay pasos disponibles para esta lección.';
+    return;
+  }
+
+  practiceStatus.textContent = `Paso ${prompt.stepNumber} de ${prompt.totalSteps}. Aciertos en sesión: ${practiceSession.correctCount}.`;
+  practiceCard.appendChild(createElement('p', 'meta', 'Seleccioná la tarjeta que coincide con esta etiqueta del catálogo:'));
+  practiceCard.appendChild(createElement('h3', null, prompt.label));
+  practiceCard.appendChild(createElement('p', 'unavailable', 'No se muestran movimientos ni videos inventados; esta práctica solo reconoce etiquetas textuales.'));
+
+  const options = createElement('div', 'practice-options');
+  for (const option of prompt.options) {
+    const button = createElement('button', null, option.label);
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      const result = answerPracticeStep(practiceSession, selectedLesson, option.id);
+      practiceSession = result.nextSession;
+      renderPractice();
+    });
+    options.appendChild(button);
+  }
+  practiceCard.appendChild(options);
+  renderPracticeFeedback();
+}
+
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   renderResult(input.value);
@@ -252,4 +367,6 @@ playCurrentVideoButton.addEventListener('click', async () => {
 });
 
 renderCatalog();
+renderLessons();
+renderPractice();
 renderResult('');

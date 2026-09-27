@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Escuela LSB — Diccionario inicial</title>
+    <title>Escuela LSB — Diccionario y lecciones iniciales</title>
     <link rel="stylesheet" href="styles.css">
     <script type="module" src="src/app.js"></script>
   </head>
@@ -14,16 +14,20 @@
           <span class="brand-mark" aria-hidden="true">LSB</span>
           <span>Escuela LSB</span>
         </a>
+        <div class="nav-links" aria-label="Navegación de secciones">
+          <a href="#dictionary">Diccionario</a>
+          <a href="#lessons">Lecciones</a>
+        </div>
         <a class="skip-link" href="#lookup-input">Buscar palabra</a>
       </nav>
 
       <section class="hero-copy" aria-labelledby="page-title">
-        <p class="eyebrow">Diccionario educativo inicial</p>
-        <h1 id="page-title">Buscá vocabulario LSB desde texto en español.</h1>
+        <p class="eyebrow">Diccionario y lecciones iniciales</p>
+        <h1 id="page-title">Buscá vocabulario LSB y practicá por categorías.</h1>
         <p>
-          Este primer corte es un diccionario móvil y sin backend. El catálogo incluido sirve para
-          probar búsqueda, orden de resultados y estados de video faltante. No valida señas,
-          no inventa movimientos y no hace reconocimiento con cámara.
+          Este corte suma lecciones de principiante al diccionario móvil sin backend. El catálogo incluido sirve para
+          probar búsqueda, orden de resultados y práctica textual. No valida señas, no inventa movimientos,
+          no guarda progreso persistente y no hace reconocimiento con cámara.
         </p>
       </section>
     </header>
@@ -88,6 +92,26 @@
         </section>
       </section>
 
+      <section id="lessons" class="panel lessons-panel" aria-labelledby="lessons-title">
+        <div class="section-heading">
+          <p class="eyebrow">Lecciones iniciales</p>
+          <h2 id="lessons-title">Aprender por categorías</h2>
+          <p>
+            Cada lección se arma desde el mismo catálogo compartido. El avance de práctica vive solo en esta sesión:
+            si recargás la página, empieza de nuevo.
+          </p>
+        </div>
+        <div id="lesson-list" class="lesson-list" aria-label="Lecciones por categoría"></div>
+        <section class="practice-panel" aria-labelledby="practice-title" aria-live="polite">
+          <div>
+            <p class="eyebrow">Práctica interactiva</p>
+            <h3 id="practice-title">Elegí una lección para practicar</h3>
+            <p id="practice-status" class="meta">No se guarda progreso fuera de esta pestaña.</p>
+          </div>
+          <div id="practice-card" class="practice-card"></div>
+        </section>
+      </section>
+
       <section class="panel catalog-panel" aria-labelledby="catalog-title">
         <div class="section-heading">
           <p class="eyebrow">Catálogo inicial</p>
@@ -102,10 +126,10 @@
 
       <section class="panel note-panel" aria-labelledby="scope-title">
         <p class="eyebrow">Alcance de este corte</p>
-        <h2 id="scope-title">Solo diccionario textual</h2>
+        <h2 id="scope-title">Diccionario textual y lecciones</h2>
         <p>
-          Las lecciones y la captura con cámara se agregarán en cortes posteriores. Este snapshot evita
-          enlaces muertos y evita prometer funciones que todavía no están en esta unidad verificable.
+          Esta unidad agrega práctica textual por categorías sin almacenamiento persistente. La captura con cámara
+          y cualquier reconocimiento automático quedan fuera de este snapshot verificable.
         </p>
       </section>
     </main>
