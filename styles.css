@@ -39,7 +39,8 @@ a {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -70,7 +71,8 @@ button:disabled {
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
@@ -220,7 +222,8 @@ main {
   gap: 0.75rem;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 3.25rem;
   border: 1px solid var(--line);
@@ -233,7 +236,9 @@ input {
 .input-row button,
 .playback-controls button,
 .lesson-actions button,
-.practice-options button {
+.practice-options button,
+.capture-actions button,
+.download-button {
   padding: 0 1.1rem;
 }
 
@@ -246,7 +251,9 @@ input {
 .token-list,
 .playback-controls,
 .lesson-actions,
-.practice-options {
+.practice-options,
+.capture-actions,
+.download-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -287,7 +294,9 @@ input {
 .unknown-panel,
 .playback-panel,
 .practice-panel,
-.note-panel {
+.note-panel,
+.camera-card,
+.capture-panel {
   border: 1px solid var(--line);
   border-radius: 1.2rem;
   background: var(--surface-strong);
@@ -298,7 +307,8 @@ input {
 .lesson-card,
 .unknown-panel,
 .playback-panel,
-.practice-panel {
+.practice-panel,
+.camera-card {
   padding: 1rem;
 }
 
@@ -346,7 +356,8 @@ input {
 }
 
 .sequence-video,
-.entry-video {
+.entry-video,
+.capture-video {
   width: 100%;
   max-height: 24rem;
   border-radius: 1rem;
@@ -402,6 +413,49 @@ input {
   background: var(--success);
 }
 
+.capture-panel {
+  display: grid;
+  gap: 1rem;
+  background: linear-gradient(135deg, #fff, #fff1d3);
+}
+
+.capture-form,
+.camera-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.capture-form label {
+  font-weight: 800;
+}
+
+.camera-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  border-radius: 999px;
+  background: var(--success);
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.metadata-preview {
+  max-height: 14rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #1c1712;
+  color: #fff8ee;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
 @media (min-width: 720px) {
   .nav-links {
     display: inline-flex;
@@ -418,5 +472,9 @@ input {
   .category-list,
   .lesson-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .camera-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

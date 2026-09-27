@@ -17,6 +17,7 @@
         <div class="nav-links" aria-label="Navegación de secciones">
           <a href="#dictionary">Diccionario</a>
           <a href="#lessons">Lecciones</a>
+          <a href="#capture">Cámara</a>
         </div>
         <a class="skip-link" href="#lookup-input">Buscar palabra</a>
       </nav>
@@ -25,9 +26,9 @@
         <p class="eyebrow">Diccionario y lecciones iniciales</p>
         <h1 id="page-title">Buscá vocabulario LSB y practicá por categorías.</h1>
         <p>
-          Este corte suma lecciones de principiante al diccionario móvil sin backend. El catálogo incluido sirve para
-          probar búsqueda, orden de resultados y práctica textual. No valida señas, no inventa movimientos,
-          no guarda progreso persistente y no hace reconocimiento con cámara.
+          Este corte suma captura etiquetada con cámara al diccionario móvil y las lecciones iniciales sin backend.
+          El catálogo incluido sirve para probar búsqueda, orden de resultados y práctica textual. La cámara solo graba
+          muestras que vos etiquetás y descargás; no valida señas, no inventa movimientos ni hace reconocimiento automático.
         </p>
       </section>
     </header>
@@ -124,12 +125,68 @@
         <div id="catalog-list" class="category-list"></div>
       </section>
 
+      <section id="capture" class="panel capture-panel" aria-labelledby="capture-title">
+        <div class="section-heading">
+          <p class="eyebrow">Captura etiquetada</p>
+          <h2 id="capture-title">Grabar clips para entrenamiento y evaluación futura</h2>
+          <p>
+            Esta cámara no traduce señas ni hace reconocimiento automático. Solo graba clips que vos etiquetás y descargás
+            explícitamente para analizarlos después; no se suben archivos, no hay backend y no se usa almacenamiento persistente del navegador.
+          </p>
+        </div>
+
+        <div id="capture-support" class="summary" role="status">Revisando capacidades de cámara y grabación…</div>
+
+        <form id="capture-form" class="capture-form" autocomplete="off">
+          <label for="catalog-label">Etiqueta del catálogo</label>
+          <select id="catalog-label" name="catalogLabel"></select>
+
+          <label for="custom-label">O etiqueta personalizada</label>
+          <input
+            id="custom-label"
+            name="customLabel"
+            type="text"
+            maxlength="80"
+            placeholder="Ej.: saludo practicado por estudiante"
+            aria-describedby="capture-label-help"
+          >
+          <p id="capture-label-help" class="help-text">
+            Si escribís una etiqueta personalizada, se usa esa etiqueta en lugar del catálogo. La etiqueta queda congelada al iniciar la grabación y viaja en el JSON descargado.
+          </p>
+        </form>
+
+        <div class="camera-grid">
+          <div class="camera-card">
+            <h3>Cámara en vivo</h3>
+            <video id="camera-preview" class="capture-video" playsinline muted hidden></video>
+            <div id="camera-placeholder" class="video-placeholder">La cámara está apagada. Tocá “Iniciar cámara” para pedir permiso.</div>
+            <div class="capture-actions" role="group" aria-label="Controles de cámara y grabación">
+              <button id="start-camera" type="button">Iniciar cámara</button>
+              <button id="start-recording" type="button" disabled>Grabar clip</button>
+              <button id="stop-recording" type="button" disabled>Detener</button>
+            </div>
+            <p id="capture-status" class="meta" aria-live="polite">El límite de grabación es de 15 segundos para cuidar memoria del dispositivo.</p>
+          </div>
+
+          <div class="camera-card">
+            <h3>Vista previa y descarga</h3>
+            <video id="recorded-preview" class="capture-video" controls preload="metadata" hidden></video>
+            <div id="recorded-placeholder" class="video-placeholder">Todavía no hay clip grabado para descargar.</div>
+            <div class="download-list">
+              <a id="download-video" class="download-button" download hidden>Descargar video</a>
+              <a id="download-metadata" class="download-button" download hidden>Descargar metadata JSON</a>
+            </div>
+            <pre id="metadata-preview" class="metadata-preview" hidden></pre>
+          </div>
+        </div>
+      </section>
+
       <section class="panel note-panel" aria-labelledby="scope-title">
         <p class="eyebrow">Alcance de este corte</p>
-        <h2 id="scope-title">Diccionario textual y lecciones</h2>
+        <h2 id="scope-title">Diccionario, lecciones y captura etiquetada</h2>
         <p>
-          Esta unidad agrega práctica textual por categorías sin almacenamiento persistente. La captura con cámara
-          y cualquier reconocimiento automático quedan fuera de este snapshot verificable.
+          Esta unidad agrega práctica textual por categorías y clips temporales con descarga explícita. Cualquier reconocimiento
+          automático queda fuera de este snapshot: requiere muestras temporales, evaluación y una implementación separada.
         </p>
       </section>
     </main>

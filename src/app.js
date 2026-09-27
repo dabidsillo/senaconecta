@@ -11,6 +11,18 @@ import {
   createPracticeSession,
   getPracticePrompt
 } from './lessons.mjs';
+import {
+  DEFAULT_RECORDING_LIMIT_MS,
+  buildCaptureMetadata,
+  chooseSupportedMimeType,
+  createMetadataBlob,
+  createSafeFileStem,
+  freezeResolvedLabel,
+  getCaptureSupport,
+  isResolvedLabelValid,
+  resolveCaptureLabel,
+  stopStreamTracks
+} from './capture.mjs';
 
 const form = document.querySelector('#lookup-form');
 const input = document.querySelector('#lookup-input');
@@ -29,6 +41,20 @@ const lessonList = document.querySelector('#lesson-list');
 const practiceTitle = document.querySelector('#practice-title');
 const practiceStatus = document.querySelector('#practice-status');
 const practiceCard = document.querySelector('#practice-card');
+const captureSupport = document.querySelector('#capture-support');
+const catalogLabelSelect = document.querySelector('#catalog-label');
+const customLabelInput = document.querySelector('#custom-label');
+const cameraPreview = document.querySelector('#camera-preview');
+const cameraPlaceholder = document.querySelector('#camera-placeholder');
+const recordedPreview = document.querySelector('#recorded-preview');
+const recordedPlaceholder = document.querySelector('#recorded-placeholder');
+const startCameraButton = document.querySelector('#start-camera');
+const startRecordingButton = document.querySelector('#start-recording');
+const stopRecordingButton = document.querySelector('#stop-recording');
+const captureStatus = document.querySelector('#capture-status');
+const downloadVideoLink = document.querySelector('#download-video');
+const downloadMetadataLink = document.querySelector('#download-metadata');
+const metadataPreview = document.querySelector('#metadata-preview');
 
 const beginnerLessons = buildBeginnerLessons(STARTER_CATALOG);
 let selectedLesson = beginnerLessons[0] ?? null;
@@ -36,6 +62,19 @@ let practiceSession = selectedLesson ? createPracticeSession(selectedLesson) : n
 let playbackSequence = [];
 let currentPlaybackIndex = 0;
 let skippedVideoCount = 0;
+let activeStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingStartedAt = null;
+let recordingLimitTimer = null;
+let recordingObjectUrl = null;
+let metadataObjectUrl = null;
+let selectedMimeType = '';
+let recorderFailed = false;
+let activeRecordingLabel = null;
+let recordingSessionId = 0;
+let cleanupSessionId = 0;
+let captureIsSupported = false;
 
 function createElement(tagName, className, text) {
   const element = document.createElement(tagName);
@@ -319,6 +358,295 @@ function renderPractice() {
   renderPracticeFeedback();
 }
 
+function setCaptureStatus(message) {
+  captureStatus.textContent = message;
+}
+
+function selectedCatalogEntry() {
+  return STARTER_CATALOG.find((entry) => entry.id === catalogLabelSelect.value) ?? null;
+}
+
+function currentResolvedLabel() {
+  const entry = selectedCatalogEntry();
+  return resolveCaptureLabel({
+    catalogId: entry?.id ?? '',
+    catalogLabel: entry?.displayLabel ?? '',
+    customLabel: customLabelInput.value
+  });
+}
+
+function syncCaptureButtons() {
+  const labelIsReady = isResolvedLabelValid(currentResolvedLabel());
+  startRecordingButton.disabled = !captureIsSupported || !activeStream || mediaRecorder?.state === 'recording' || !labelIsReady;
+  stopRecordingButton.disabled = mediaRecorder?.state !== 'recording';
+  startCameraButton.disabled = !captureIsSupported || mediaRecorder?.state === 'recording';
+}
+
+function safeStopRecorder(statusMessage) {
+  if (mediaRecorder?.state !== 'recording') {
+    return false;
+  }
+
+  try {
+    mediaRecorder.stop();
+    if (statusMessage) {
+      setCaptureStatus(statusMessage);
+    }
+    return true;
+  } catch {
+    recorderFailed = true;
+    mediaRecorder = null;
+    recordingStartedAt = null;
+    activeRecordingLabel = null;
+    recordedChunks = [];
+    window.clearTimeout(recordingLimitTimer);
+    recordingLimitTimer = null;
+    setCaptureStatus('El navegador no pudo detener la grabación correctamente. No se preparó ningún clip.');
+    syncCaptureButtons();
+    return false;
+  }
+}
+
+function resetCameraPreview() {
+  cameraPreview.pause?.();
+  cameraPreview.srcObject = null;
+  cameraPreview.hidden = true;
+  cameraPlaceholder.hidden = false;
+}
+
+function revokeCaptureUrls() {
+  if (recordingObjectUrl) {
+    URL.revokeObjectURL(recordingObjectUrl);
+    recordingObjectUrl = null;
+  }
+  if (metadataObjectUrl) {
+    URL.revokeObjectURL(metadataObjectUrl);
+    metadataObjectUrl = null;
+  }
+}
+
+function resetRecordedPreview() {
+  revokeCaptureUrls();
+  recordedPreview.pause?.();
+  recordedPreview.hidden = true;
+  recordedPreview.removeAttribute('src');
+  recordedPreview.load();
+  recordedPlaceholder.hidden = false;
+  downloadVideoLink.hidden = true;
+  downloadVideoLink.removeAttribute('href');
+  downloadMetadataLink.hidden = true;
+  downloadMetadataLink.removeAttribute('href');
+  metadataPreview.hidden = true;
+  metadataPreview.textContent = '';
+}
+
+function renderCatalogLabelOptions() {
+  clearChildren(catalogLabelSelect);
+  for (const entry of STARTER_CATALOG) {
+    const option = document.createElement('option');
+    option.value = entry.id;
+    option.textContent = `${entry.displayLabel} — ${entry.category}`;
+    catalogLabelSelect.appendChild(option);
+  }
+}
+
+function initializeCaptureSupport() {
+  const support = getCaptureSupport(window);
+  captureIsSupported = support.supported;
+  captureSupport.textContent = support.supported
+    ? 'Cámara y grabación disponibles: iniciá la cámara cuando estés listo para pedir permiso.'
+    : support.message;
+  syncCaptureButtons();
+}
+
+async function startCamera() {
+  resetRecordedPreview();
+  stopStreamTracks(activeStream);
+  activeStream = null;
+  const support = getCaptureSupport(window);
+  if (!support.supported) {
+    captureSupport.textContent = support.message;
+    syncCaptureButtons();
+    return;
+  }
+
+  try {
+    activeStream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } }
+    });
+    cameraPreview.srcObject = activeStream;
+    cameraPreview.hidden = false;
+    cameraPlaceholder.hidden = true;
+    await cameraPreview.play();
+    setCaptureStatus('Cámara activa. Elegí una etiqueta clara y grabá un clip corto de movimiento.');
+  } catch (error) {
+    stopStreamTracks(activeStream);
+    activeStream = null;
+    resetCameraPreview();
+    const denied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError';
+    setCaptureStatus(denied
+      ? 'Permiso de cámara denegado o contexto no seguro. Usá HTTPS/localhost y concedé permiso si querés grabar.'
+      : 'No se pudo iniciar la cámara en este dispositivo. Revisá permisos, disponibilidad y navegador.');
+  } finally {
+    syncCaptureButtons();
+  }
+}
+
+function finishRecording(sessionId) {
+  window.clearTimeout(recordingLimitTimer);
+  recordingLimitTimer = null;
+
+  const cleanedUp = sessionId !== recordingSessionId || sessionId <= cleanupSessionId;
+  const resolvedLabel = activeRecordingLabel;
+  const startedAt = recordingStartedAt;
+  mediaRecorder = null;
+  recordingStartedAt = null;
+  activeRecordingLabel = null;
+
+  if (cleanedUp) {
+    recordedChunks = [];
+    recorderFailed = false;
+    syncCaptureButtons();
+    return;
+  }
+
+  if (recorderFailed || recordedChunks.length === 0 || !isResolvedLabelValid(resolvedLabel)) {
+    recordedChunks = [];
+    recorderFailed = false;
+    setCaptureStatus('La grabación no produjo video descargable. Probá de nuevo con otro navegador o un clip más corto.');
+    syncCaptureButtons();
+    return;
+  }
+
+  const endedAt = new Date();
+  const videoBlob = new Blob(recordedChunks, { type: selectedMimeType || 'video/webm' });
+  const durationMs = startedAt ? endedAt.getTime() - startedAt.getTime() : 0;
+  const metadata = buildCaptureMetadata({
+    catalogVersion: CATALOG_VERSION,
+    resolvedLabel,
+    mimeType: videoBlob.type,
+    sizeBytes: videoBlob.size,
+    durationMs,
+    startedAt,
+    endedAt,
+    recordingLimitMs: DEFAULT_RECORDING_LIMIT_MS
+  });
+  const fileStem = createSafeFileStem({ label: resolvedLabel.label, recordedAt: endedAt });
+  const metadataBlob = createMetadataBlob(metadata);
+
+  revokeCaptureUrls();
+  recordingObjectUrl = URL.createObjectURL(videoBlob);
+  metadataObjectUrl = URL.createObjectURL(metadataBlob);
+
+  recordedPreview.src = recordingObjectUrl;
+  recordedPreview.hidden = false;
+  recordedPlaceholder.hidden = true;
+  downloadVideoLink.href = recordingObjectUrl;
+  downloadVideoLink.download = `${fileStem}.${videoBlob.type.includes('mp4') ? 'mp4' : 'webm'}`;
+  downloadVideoLink.hidden = false;
+  downloadMetadataLink.href = metadataObjectUrl;
+  downloadMetadataLink.download = `${fileStem}.json`;
+  downloadMetadataLink.hidden = false;
+  metadataPreview.textContent = JSON.stringify(metadata, null, 2);
+  metadataPreview.hidden = false;
+  setCaptureStatus('Clip listo en memoria temporal. Descargá el video y el JSON; nada se subió ni quedó guardado permanentemente.');
+  recordedChunks = [];
+  syncCaptureButtons();
+}
+
+function startRecording() {
+  const resolvedLabel = currentResolvedLabel();
+  if (!activeStream || !isResolvedLabelValid(resolvedLabel)) {
+    setCaptureStatus('Antes de grabar necesitás cámara activa y una etiqueta del catálogo o personalizada.');
+    return;
+  }
+
+  const recordingLabel = freezeResolvedLabel(resolvedLabel);
+  resetRecordedPreview();
+  recordedChunks = [];
+  activeRecordingLabel = recordingLabel;
+  selectedMimeType = chooseSupportedMimeType(MediaRecorder);
+  recorderFailed = false;
+  const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
+
+  try {
+    mediaRecorder = new MediaRecorder(activeStream, recorderOptions);
+  } catch {
+    activeRecordingLabel = null;
+    recordedChunks = [];
+    setCaptureStatus('Este navegador no pudo crear el grabador de video con el formato disponible.');
+    syncCaptureButtons();
+    return;
+  }
+
+  const sessionId = recordingSessionId + 1;
+  mediaRecorder.addEventListener('dataavailable', (event) => {
+    if (event.data?.size > 0) {
+      recordedChunks.push(event.data);
+    }
+  });
+  mediaRecorder.addEventListener('stop', () => finishRecording(sessionId), { once: true });
+  mediaRecorder.addEventListener('error', () => {
+    window.clearTimeout(recordingLimitTimer);
+    recordingLimitTimer = null;
+    recorderFailed = true;
+    const stopped = safeStopRecorder('La grabación falló. No se guardó el clip; probá de nuevo con un clip más corto.');
+    if (!stopped) {
+      mediaRecorder = null;
+      recordingStartedAt = null;
+      activeRecordingLabel = null;
+      recordedChunks = [];
+      setCaptureStatus('La grabación falló. No se guardó el clip; probá de nuevo con un clip más corto.');
+    }
+    syncCaptureButtons();
+  });
+
+  try {
+    recordingStartedAt = new Date();
+    mediaRecorder.start();
+    recordingSessionId = sessionId;
+  } catch {
+    mediaRecorder = null;
+    recordingStartedAt = null;
+    activeRecordingLabel = null;
+    recordedChunks = [];
+    recorderFailed = false;
+    setCaptureStatus('Este navegador no pudo iniciar la grabación. Probá con otro navegador compatible o un clip más corto.');
+    syncCaptureButtons();
+    return;
+  }
+
+  recordingLimitTimer = window.setTimeout(() => {
+    if (mediaRecorder?.state === 'recording') {
+      safeStopRecorder('Se alcanzó el límite de 15 segundos y la grabación se detuvo automáticamente.');
+    }
+  }, DEFAULT_RECORDING_LIMIT_MS);
+  setCaptureStatus(`Grabando “${recordingLabel.label}”. La etiqueta quedó congelada hasta finalizar el clip.`);
+  syncCaptureButtons();
+}
+
+function stopRecording() {
+  safeStopRecorder('Grabación detenida. Preparando vista previa y descargas explícitas.');
+}
+
+function cleanupCapture() {
+  cleanupSessionId = recordingSessionId;
+  window.clearTimeout(recordingLimitTimer);
+  recordingLimitTimer = null;
+  safeStopRecorder();
+  stopStreamTracks(activeStream);
+  activeStream = null;
+  recordedChunks = [];
+  recordingStartedAt = null;
+  activeRecordingLabel = null;
+  recorderFailed = false;
+  resetCameraPreview();
+  resetRecordedPreview();
+  setCaptureStatus('Cámara y grabación cerradas. Los clips no descargados se descartaron al salir.');
+  syncCaptureButtons();
+}
+
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   renderResult(input.value);
@@ -366,7 +694,17 @@ playCurrentVideoButton.addEventListener('click', async () => {
   }
 });
 
+startCameraButton.addEventListener('click', startCamera);
+startRecordingButton.addEventListener('click', startRecording);
+stopRecordingButton.addEventListener('click', stopRecording);
+catalogLabelSelect.addEventListener('change', syncCaptureButtons);
+customLabelInput.addEventListener('input', syncCaptureButtons);
+window.addEventListener('pagehide', cleanupCapture);
+window.addEventListener('beforeunload', cleanupCapture);
+
 renderCatalog();
 renderLessons();
 renderPractice();
+renderCatalogLabelOptions();
+initializeCaptureSupport();
 renderResult('');
