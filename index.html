@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es-BO">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Escuela LSB — Diccionario inicial</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body>
+    <header class="site-hero">
+      <nav class="topbar" aria-label="Navegación principal">
+        <a class="brand" href="#dictionary" aria-label="Ir al diccionario de Escuela LSB">
+          <span class="brand-mark" aria-hidden="true">LSB</span>
+          <span>Escuela LSB</span>
+        </a>
+        <a class="skip-link" href="#lookup-input">Buscar palabra</a>
+      </nav>
+
+      <section class="hero-copy" aria-labelledby="page-title">
+        <p class="eyebrow">Diccionario educativo inicial</p>
+        <h1 id="page-title">Buscá vocabulario LSB desde texto en español.</h1>
+        <p>
+          Este primer corte es un diccionario móvil y sin backend. El catálogo incluido sirve para
+          probar búsqueda, orden de resultados y estados de video faltante. No valida señas,
+          no inventa movimientos y no hace reconocimiento con cámara.
+        </p>
+      </section>
+    </header>
+
+    <main>
+      <section id="dictionary" class="panel dictionary-panel" aria-labelledby="dictionary-title">
+        <div class="section-heading">
+          <p class="eyebrow">Diccionario</p>
+          <h2 id="dictionary-title">Buscar por texto</h2>
+          <p>Probá con “hola”, “gracias”, “estudiante”, “libro”, “agua” o “familia”.</p>
+        </div>
+
+        <form id="lookup-form" class="lookup-form" autocomplete="off">
+          <label for="lookup-input">Texto para buscar</label>
+          <div class="input-row">
+            <input
+              id="lookup-input"
+              name="lookup"
+              type="text"
+              inputmode="text"
+              maxlength="160"
+              placeholder="Ej.: Hola estudiante y agua"
+              aria-describedby="lookup-help"
+            >
+            <button type="submit">Buscar</button>
+          </div>
+          <p id="lookup-help" class="help-text">
+            La búsqueda ignora mayúsculas y acentos, separa el texto por palabras y no guarda datos.
+          </p>
+        </form>
+
+        <div class="examples" aria-label="Ejemplos de búsqueda">
+          <button type="button" data-example="Hola estudiante">Hola estudiante</button>
+          <button type="button" data-example="Gracias por el agua">Gracias por el agua</button>
+          <button type="button" data-example="Familia y libro">Familia y libro</button>
+        </div>
+
+        <section class="results" aria-live="polite" aria-atomic="false">
+          <p id="summary" class="summary">Ingresá texto para buscar en el catálogo inicial.</p>
+
+          <section class="playback-panel" aria-labelledby="playback-title">
+            <div>
+              <p class="eyebrow">Reproducción ordenada</p>
+              <h3 id="playback-title">Videos encontrados</h3>
+              <p id="playback-status" class="meta">No hay secuencia preparada. Los videos nunca se reproducen automáticamente.</p>
+            </div>
+            <video id="sequence-video" class="sequence-video" controls preload="metadata" hidden></video>
+            <div class="playback-controls" role="group" aria-label="Controles de reproducción secuencial">
+              <button id="previous-video" type="button" disabled>Anterior</button>
+              <button id="play-current-video" type="button" disabled>Reproducir actual</button>
+              <button id="next-video" type="button" disabled>Siguiente</button>
+            </div>
+          </section>
+
+          <div id="recognized-list" class="card-grid" aria-label="Resultados reconocidos"></div>
+
+          <div id="unknown-panel" class="unknown-panel" hidden>
+            <h3>Palabras no encontradas</h3>
+            <p>Estas palabras todavía no están en el catálogo inicial:</p>
+            <div id="unknown-list" class="token-list"></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel catalog-panel" aria-labelledby="catalog-title">
+        <div class="section-heading">
+          <p class="eyebrow">Catálogo inicial</p>
+          <h2 id="catalog-title">Entradas disponibles</h2>
+          <p>
+            Las entradas están agrupadas para facilitar revisión futura. Una etiqueta de muestra no confirma
+            que exista una seña validada ni que haya video disponible.
+          </p>
+        </div>
+        <div id="catalog-list" class="category-list"></div>
+      </section>
+
+      <section class="panel note-panel" aria-labelledby="scope-title">
+        <p class="eyebrow">Alcance de este corte</p>
+        <h2 id="scope-title">Solo diccionario textual</h2>
+        <p>
+          Las lecciones y la captura con cámara se agregarán en cortes posteriores. Este snapshot evita
+          enlaces muertos y evita prometer funciones que todavía no están en esta unidad verificable.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
