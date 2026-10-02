@@ -4,7 +4,7 @@ This work-unit snapshot runs the mobile-first Spanish dictionary shell, beginner
 
 The bundled entries are illustrative catalog labels, not validated Bolivian Sign Language claims. Camera capture does **not** translate signs, recognize movement, upload files, create accounts, use analytics, or store browser-persistent data.
 
-Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md).
+Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). Defense guide: [docs/guia-de-defensa.md](docs/guia-de-defensa.md).
 
 ## Run locally
 
