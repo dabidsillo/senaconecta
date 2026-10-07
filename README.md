@@ -14,6 +14,15 @@ Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). 
 4. Open “Lecciones”, pick a category, and answer the text-only practice prompts.
 5. Open “Cámara”, allow camera access only if you choose to record, then download both the video and metadata JSON before closing or refreshing the page.
 
+### Windows (double-click)
+
+1. Install Python 3 if it is not already available (`py -3` preferred; `python.exe` also works).
+2. Double-click `iniciar-tinku.bat` in the project root. It works even when launched from another working directory.
+3. The launcher opens `http://127.0.0.1:8000/` only after Python binds the local server to `127.0.0.1:8000`; it does not expose the site to the LAN. Leave the console open while using the site, and close it to stop serving.
+4. Allow camera access in your browser only if you choose to record. If Python is missing or port 8000 is busy, the console shows an error instead of opening the browser.
+
+The Windows launcher has not yet been tested on a Windows machine.
+
 Avoid `file://` because browser JavaScript modules and camera APIs may be blocked. Camera access generally requires `localhost` or HTTPS. Binding the local server to `127.0.0.1` keeps the repository off the LAN by default. Recording blobs live in memory until replaced or the page closes.
 
 ## Catalog, videos, lessons, and capture
