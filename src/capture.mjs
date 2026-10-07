@@ -20,6 +20,28 @@ export const DEFAULT_MIME_TYPES = VIDEO_ONLY_MIME_TYPES;
 export const DEFAULT_RECORDING_LIMIT_MS = 15000;
 export const DEFAULT_STOP_PENDING_TIMEOUT_MS = 3000;
 
+export function getCaptureControlState({
+  captureIsSupported = false,
+  hasActiveStream = false,
+  cameraRequestPending = false,
+  isRecording = false,
+  isFinalizing = false,
+  labelIsReady = false
+} = {}) {
+  const recorderIsBusy = isRecording || isFinalizing;
+
+  return {
+    camera: {
+      label: cameraRequestPending ? 'Iniciando cámara…' : hasActiveStream ? 'Detener cámara' : 'Iniciar cámara',
+      disabled: !captureIsSupported || cameraRequestPending || recorderIsBusy
+    },
+    recording: {
+      label: isFinalizing ? 'Preparando clip…' : isRecording ? 'Detener clip' : 'Grabar clip',
+      disabled: isFinalizing || (!isRecording && (!captureIsSupported || !hasActiveStream || !labelIsReady))
+    }
+  };
+}
+
 export function getCaptureSupport(environment = globalThis) {
   const navigatorRef = environment.navigator;
   const mediaDevices = navigatorRef?.mediaDevices;

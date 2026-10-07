@@ -9,6 +9,7 @@ import {
   createSafeFileStem,
   createStopPendingWatchdog,
   freezeResolvedLabel,
+  getCaptureControlState,
   getCaptureSupport,
   isCurrentRecorderStopEvent,
   isCurrentRecordingSession,
@@ -19,6 +20,51 @@ import {
   stopStreamTracks,
   streamHasAudioTracks
 } from '../src/capture.mjs';
+
+test('getCaptureControlState labels and disables the two controls across capture transitions', () => {
+  assert.deepEqual(getCaptureControlState(), {
+    camera: { label: 'Iniciar cámara', disabled: true },
+    recording: { label: 'Grabar clip', disabled: true }
+  });
+
+  assert.deepEqual(getCaptureControlState({
+    captureIsSupported: true,
+    cameraRequestPending: true,
+    labelIsReady: true
+  }), {
+    camera: { label: 'Iniciando cámara…', disabled: true },
+    recording: { label: 'Grabar clip', disabled: true }
+  });
+
+  assert.deepEqual(getCaptureControlState({
+    captureIsSupported: true,
+    hasActiveStream: true,
+    labelIsReady: true
+  }), {
+    camera: { label: 'Detener cámara', disabled: false },
+    recording: { label: 'Grabar clip', disabled: false }
+  });
+
+  assert.deepEqual(getCaptureControlState({
+    captureIsSupported: true,
+    hasActiveStream: true,
+    labelIsReady: false,
+    isRecording: true
+  }), {
+    camera: { label: 'Detener cámara', disabled: true },
+    recording: { label: 'Detener clip', disabled: false }
+  });
+
+  assert.deepEqual(getCaptureControlState({
+    captureIsSupported: true,
+    hasActiveStream: true,
+    labelIsReady: true,
+    isFinalizing: true
+  }), {
+    camera: { label: 'Detener cámara', disabled: true },
+    recording: { label: 'Preparando clip…', disabled: true }
+  });
+});
 
 test('getCaptureSupport reports missing camera and recorder capabilities separately', () => {
   assert.deepEqual(getCaptureSupport({ navigator: {} }), {

@@ -18,6 +18,7 @@ import {
   createMetadataBlob,
   createSafeFileStem,
   freezeResolvedLabel,
+  getCaptureControlState,
   getCaptureSupport,
   isCurrentRecorderStopEvent,
   isCurrentRecordingSession,
@@ -52,7 +53,6 @@ const recordedPreview = document.querySelector('#recorded-preview');
 const recordedPlaceholder = document.querySelector('#recorded-placeholder');
 const startCameraButton = document.querySelector('#start-camera');
 const startRecordingButton = document.querySelector('#start-recording');
-const stopRecordingButton = document.querySelector('#stop-recording');
 const captureStatus = document.querySelector('#capture-status');
 const downloadVideoLink = document.querySelector('#download-video');
 const downloadMetadataLink = document.querySelector('#download-metadata');
@@ -80,6 +80,9 @@ let recordingSessionId = 0;
 let cleanupSessionId = 0;
 let timedOutSessionId = 0;
 let captureIsSupported = false;
+let cameraRequestPending = false;
+let cameraRequestId = 0;
+let capturePageActive = true;
 
 function createElement(tagName, className, text) {
   const element = document.createElement(tagName);
@@ -360,11 +363,18 @@ function currentResolvedLabel() {
 }
 
 function syncCaptureButtons() {
-  const labelIsReady = isResolvedLabelValid(currentResolvedLabel());
-  const recorderIsBusy = mediaRecorder?.state === 'recording' || stopPendingSessionId !== 0;
-  startRecordingButton.disabled = !captureIsSupported || !activeStream || recorderIsBusy || !labelIsReady;
-  stopRecordingButton.disabled = mediaRecorder?.state !== 'recording' || stopPendingSessionId !== 0;
-  startCameraButton.disabled = !captureIsSupported || recorderIsBusy;
+  const controls = getCaptureControlState({
+    captureIsSupported,
+    hasActiveStream: Boolean(activeStream),
+    cameraRequestPending,
+    isRecording: mediaRecorder?.state === 'recording',
+    isFinalizing: stopPendingSessionId !== 0,
+    labelIsReady: isResolvedLabelValid(currentResolvedLabel())
+  });
+  startCameraButton.textContent = controls.camera.label;
+  startCameraButton.disabled = controls.camera.disabled;
+  startRecordingButton.textContent = controls.recording.label;
+  startRecordingButton.disabled = controls.recording.disabled;
 }
 
 function clearRecordingLimitTimer() {
@@ -491,10 +501,45 @@ function initializeCaptureSupport() {
   syncCaptureButtons();
 }
 
-async function startCamera() {
-  resetRecordedPreview();
-  stopStreamTracks(activeStream);
+function stopCamera() {
+  if (!activeStream || mediaRecorder?.state === 'recording' || stopPendingSessionId !== 0) {
+    return;
+  }
+
+  const stream = activeStream;
   activeStream = null;
+  stopStreamTracks(stream);
+  resetCameraPreview();
+  setCaptureStatus('Cámara detenida. Los clips ya preparados y sus descargas siguen disponibles.');
+  syncCaptureButtons();
+}
+
+function handleCameraTrackEnded(stream) {
+  if (activeStream !== stream || !(stream.getTracks?.() ?? []).every((track) => track.readyState === 'ended')) {
+    return;
+  }
+
+  activeStream = null;
+  resetCameraPreview();
+  if (mediaRecorder?.state === 'recording') {
+    safeStopRecorder('La cámara se desconectó. Preparando el clip disponible.');
+  } else if (stopPendingSessionId === 0) {
+    setCaptureStatus('La cámara se detuvo en el dispositivo. Podés iniciarla de nuevo cuando estés listo.');
+  }
+  syncCaptureButtons();
+}
+
+function attachCameraTrackListeners(stream) {
+  for (const track of stream.getTracks?.() ?? []) {
+    track.addEventListener?.('ended', () => handleCameraTrackEnded(stream), { once: true });
+  }
+}
+
+async function startCamera() {
+  if (cameraRequestPending || activeStream) {
+    return;
+  }
+
   const support = getCaptureSupport(window);
   if (!support.supported) {
     captureSupport.textContent = support.message;
@@ -502,27 +547,56 @@ async function startCamera() {
     return;
   }
 
+  const requestId = cameraRequestId + 1;
+  let stream = null;
+  cameraRequestId = requestId;
+  cameraRequestPending = true;
+  syncCaptureButtons();
+
   try {
-    activeStream = await navigator.mediaDevices.getUserMedia({
+    stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } }
     });
-    cameraPreview.srcObject = activeStream;
+    if (!capturePageActive || requestId !== cameraRequestId) {
+      stopStreamTracks(stream);
+      return;
+    }
+
+    activeStream = stream;
+    attachCameraTrackListeners(stream);
+    cameraPreview.srcObject = stream;
     cameraPreview.hidden = false;
     cameraPlaceholder.hidden = true;
     await cameraPreview.play();
     setCaptureStatus('Cámara activa. Elegí una etiqueta clara y grabá un clip corto de movimiento.');
   } catch (error) {
-    stopStreamTracks(activeStream);
-    activeStream = null;
+    if (requestId !== cameraRequestId) {
+      return;
+    }
+    if (activeStream === stream) {
+      activeStream = null;
+      stopStreamTracks(stream);
+    }
     resetCameraPreview();
     const denied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError';
     setCaptureStatus(denied
       ? 'Permiso de cámara denegado o contexto no seguro. Usá HTTPS/localhost y concedé permiso si querés grabar.'
       : 'No se pudo iniciar la cámara en este dispositivo. Revisá permisos, disponibilidad y navegador.');
   } finally {
+    if (requestId === cameraRequestId) {
+      cameraRequestPending = false;
+    }
     syncCaptureButtons();
   }
+}
+
+function toggleCamera() {
+  if (activeStream) {
+    stopCamera();
+    return;
+  }
+  void startCamera();
 }
 
 function finishRecording(sessionId, recorder) {
@@ -591,6 +665,10 @@ function finishRecording(sessionId, recorder) {
 }
 
 function startRecording() {
+  if (mediaRecorder?.state === 'recording' || stopPendingSessionId !== 0) {
+    return;
+  }
+
   const resolvedLabel = currentResolvedLabel();
   if (!activeStream || !isResolvedLabelValid(resolvedLabel)) {
     setCaptureStatus('Antes de grabar necesitás cámara activa y una etiqueta del catálogo o personalizada.');
@@ -683,6 +761,17 @@ function stopRecording() {
   safeStopRecorder('Grabación detenida. Preparando vista previa y descargas explícitas.');
 }
 
+function toggleRecording() {
+  if (stopPendingSessionId !== 0) {
+    return;
+  }
+  if (mediaRecorder?.state === 'recording') {
+    stopRecording();
+    return;
+  }
+  startRecording();
+}
+
 function cleanupCapture() {
   cleanupSessionId = recordingSessionId;
   clearRecordingLimitTimer();
@@ -747,12 +836,26 @@ playCurrentVideoButton.addEventListener('click', async () => {
   }
 });
 
-startCameraButton.addEventListener('click', startCamera);
-startRecordingButton.addEventListener('click', startRecording);
-stopRecordingButton.addEventListener('click', stopRecording);
+startCameraButton.addEventListener('click', toggleCamera);
+startRecordingButton.addEventListener('click', toggleRecording);
 catalogLabelSelect.addEventListener('change', syncCaptureButtons);
 customLabelInput.addEventListener('input', syncCaptureButtons);
-window.addEventListener('pagehide', cleanupCapture);
+function cleanupCaptureOnPageExit() {
+  capturePageActive = false;
+  cameraRequestId += 1;
+  cameraRequestPending = false;
+  cleanupCapture();
+}
+
+window.addEventListener('pagehide', cleanupCaptureOnPageExit);
+window.addEventListener('pageshow', (event) => {
+  if (!event.persisted) {
+    return;
+  }
+  capturePageActive = true;
+  setCaptureStatus('La página se restauró. Podés iniciar la cámara cuando estés listo.');
+  syncCaptureButtons();
+});
 window.addEventListener('beforeunload', cleanupCapture);
 
 renderLessons();
