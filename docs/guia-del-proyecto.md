@@ -1,6 +1,6 @@
-# Guía del proyecto Escuela LSB
+# Guía del proyecto Tinku
 
-Esta guía explica cómo está construido el MVP de Escuela LSB, qué problema intenta resolver y qué decisiones técnicas tomó el proyecto. Está escrita para una estudiante o un estudiante que recién empieza con HTML, CSS y JavaScript.
+Esta guía explica cómo está construido el MVP de Tinku, qué problema intenta resolver y qué decisiones técnicas tomó el proyecto. Está escrita para una estudiante o un estudiante que recién empieza con HTML, CSS y JavaScript.
 
 > Idea central: esta aplicación funciona en el navegador, sin servidor propio, sin cuentas y sin traducción automática de señas. Muestra un catálogo inicial, organiza lecciones y permite grabar clips etiquetados para revisión futura.
 
@@ -16,7 +16,7 @@ Esta guía explica cómo está construido el MVP de Escuela LSB, qué problema i
 
 ## Qué problema intenta resolver
 
-Escuela LSB busca ser una base escolar simple para explorar vocabulario de Lengua de Señas Boliviana en un entorno web. El proyecto sirve para explicar tres ideas:
+Tinku busca ser una base escolar simple para explorar vocabulario de Lengua de Señas Boliviana en un entorno web. El proyecto sirve para explicar tres ideas:
 
 - un diccionario textual que busca palabras en un catálogo;
 - lecciones iniciales por categoría;
@@ -422,4 +422,4 @@ Que la grabación no fue subida por la aplicación a ningún servidor.
 
 ## Resumen final
 
-Escuela LSB es un MVP de navegador que separa bien sus piezas: HTML para estructura, CSS para presentación, módulos JavaScript para lógica y pruebas Node para reglas puras. Sus decisiones favorecen privacidad, claridad y honestidad: no hay backend, no hay login, no hay persistencia automática y no hay reconocimiento de señas sin evidencia futura.
+Tinku es un MVP de navegador que separa bien sus piezas: HTML para estructura, CSS para presentación, módulos JavaScript para lógica y pruebas Node para reglas puras. Sus decisiones favorecen privacidad, claridad y honestidad: no hay backend, no hay login, no hay persistencia automática y no hay reconocimiento de señas sin evidencia futura.

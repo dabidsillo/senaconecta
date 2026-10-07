@@ -202,7 +202,7 @@ export function createSafeFileStem({ label, recordedAt = new Date() } = {}) {
     .replace(/^-+|-+$/g, '')
     .slice(0, 48) || 'sin-etiqueta';
 
-  return `lsb-capture-${safeLabel}-${safeDate}`;
+  return `tinku-capture-${safeLabel}-${safeDate}`;
 }
 
 export function buildCaptureMetadata({

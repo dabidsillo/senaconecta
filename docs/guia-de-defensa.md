@@ -1,10 +1,10 @@
-# Guía de defensa del MVP Escuela LSB
+# Guía de defensa del MVP Tinku
 
 Esta guía te ayuda a defender el MVP ante un jurado mixto: algunas personas pueden mirar el valor educativo y otras pueden preguntar por archivos, pruebas y límites técnicos. Usala junto con [docs/guia-del-proyecto.md](guia-del-proyecto.md), que explica la arquitectura con más detalle.
 
 ## Mensaje central
 
-Escuela LSB es una aplicación web local para explorar un catálogo inicial, practicar categorías y grabar clips etiquetados para revisión futura. No reconoce señas, no usa inteligencia artificial, no publica videos y no guarda datos en un servidor.
+Tinku es una aplicación web local para explorar un catálogo inicial, practicar categorías y grabar clips etiquetados para revisión futura. No reconoce señas, no usa inteligencia artificial, no publica videos y no guarda datos en un servidor.
 
 La frase más importante para decir con honestidad es esta:
 

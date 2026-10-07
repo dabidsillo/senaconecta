@@ -1,4 +1,4 @@
-# LSB school MVP — dictionary, lessons, and capture slice
+# Tinku MVP — dictionary, lessons, and capture slice
 
 This work-unit snapshot runs the mobile-first Spanish dictionary shell, beginner category lessons, and labeled camera capture for future training/evaluation samples. It supports text lookup, safe result rendering, ordered playback controls for entries that later declare videos, clear missing-video states, text-only practice that resets when the page reloads, and explicit video + JSON downloads for each recorded clip.
 

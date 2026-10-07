@@ -149,7 +149,7 @@ test('freezeResolvedLabel snapshots a valid label for recording metadata', () =>
 test('createSafeFileStem produces accent-free deterministic download names', () => {
   assert.equal(
     createSafeFileStem({ label: 'Água nueva!', recordedAt: new Date('2024-01-02T03:04:05.006Z') }),
-    'lsb-capture-agua-nueva-2024-01-02T03-04-05-006Z'
+    'tinku-capture-agua-nueva-2024-01-02T03-04-05-006Z'
   );
 });
 
