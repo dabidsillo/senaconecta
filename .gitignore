@@ -3,3 +3,8 @@
 
 # Private creator media kept outside version control.
 /videos/
+
+# User-owned thesis documentation and its private work log.
+/docs/documentacion.docx
+/docs/cambios-documentacion.md
+/odd/tasks/tinku-documentation-alignment.md
