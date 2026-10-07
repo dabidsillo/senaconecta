@@ -76,7 +76,7 @@ http://localhost:8000
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| [index.html](../index.html) | Esqueleto de la interfaz: navegación, diccionario, lecciones, catálogo y cámara. |
+| [index.html](../index.html) | Esqueleto de la interfaz: navegación fija al desplazarse, diccionario, lecciones y cámara. El catálogo compartido vive en JavaScript; no tiene una tarjeta propia. |
 | [styles.css](../styles.css) | Diseño visual mobile-first y adaptación responsiva. |
 | [src/catalog.mjs](../src/catalog.mjs) | Catálogo inicial, normalización de texto, búsqueda y secuencia de videos. |
 | [src/lessons.mjs](../src/lessons.mjs) | Lecciones por categoría y estado de práctica en memoria. |
@@ -93,7 +93,7 @@ Tiene cuatro zonas principales:
 
 1. encabezado y navegación;
 2. diccionario;
-3. lecciones y catálogo;
+3. lecciones por categoría;
 4. captura con cámara.
 
 Un fragmento ilustrativo del formulario de búsqueda se ve así:

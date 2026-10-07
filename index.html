@@ -8,20 +8,20 @@
     <script type="module" src="src/app.js"></script>
   </head>
   <body>
-    <header class="site-hero">
-      <nav class="topbar" aria-label="Navegación principal">
-        <a class="brand" href="#dictionary" aria-label="Ir al diccionario de Tinku">
-          <span class="brand-mark" aria-hidden="true">T</span>
-          <span>Tinku</span>
-        </a>
-        <div class="nav-links" aria-label="Navegación de secciones">
-          <a href="#dictionary">Diccionario</a>
-          <a href="#lessons">Lecciones</a>
-          <a href="#capture">Cámara</a>
-        </div>
-        <a class="skip-link" href="#lookup-input">Buscar palabra</a>
-      </nav>
+    <a class="skip-link" href="#lookup-input">Saltar a la búsqueda</a>
+    <nav class="topbar" aria-label="Navegación principal">
+      <a class="brand" href="#dictionary" aria-label="Ir al diccionario de Tinku">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <span>Tinku</span>
+      </a>
+      <div class="nav-links" aria-label="Navegación de secciones">
+        <a href="#dictionary">Diccionario</a>
+        <a href="#lessons">Lecciones</a>
+        <a href="#capture">Cámara</a>
+      </div>
+    </nav>
 
+    <header class="site-hero">
       <section class="hero-copy" aria-labelledby="page-title">
         <p class="eyebrow">Diccionario y lecciones iniciales</p>
         <h1 id="page-title">Buscá vocabulario LSB y practicá por categorías.</h1>
@@ -113,18 +113,6 @@
         </section>
       </section>
 
-      <section class="panel catalog-panel" aria-labelledby="catalog-title">
-        <div class="section-heading">
-          <p class="eyebrow">Catálogo inicial</p>
-          <h2 id="catalog-title">Entradas disponibles</h2>
-          <p>
-            Las entradas están agrupadas para facilitar revisión futura. Una etiqueta de muestra no confirma
-            que exista una seña validada ni que haya video disponible.
-          </p>
-        </div>
-        <div id="catalog-list" class="category-list"></div>
-      </section>
-
       <section id="capture" class="panel capture-panel" aria-labelledby="capture-title">
         <div class="section-heading">
           <p class="eyebrow">Captura etiquetada</p>
@@ -181,14 +169,6 @@
         </div>
       </section>
 
-      <section class="panel note-panel" aria-labelledby="scope-title">
-        <p class="eyebrow">Alcance de este corte</p>
-        <h2 id="scope-title">Diccionario, lecciones y captura etiquetada</h2>
-        <p>
-          Esta unidad agrega práctica textual por categorías y clips temporales con descarga explícita. Cualquier reconocimiento
-          automático queda fuera de este snapshot: requiere muestras temporales, evaluación y una implementación separada.
-        </p>
-      </section>
     </main>
   </body>
 </html>

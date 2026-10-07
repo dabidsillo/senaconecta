@@ -1,7 +1,6 @@
 import {
   CATALOG_VERSION,
   STARTER_CATALOG,
-  entriesByCategory,
   getPlayableSequence,
   lookupText
 } from './catalog.mjs';
@@ -34,7 +33,6 @@ const summary = document.querySelector('#summary');
 const recognizedList = document.querySelector('#recognized-list');
 const unknownPanel = document.querySelector('#unknown-panel');
 const unknownList = document.querySelector('#unknown-list');
-const catalogList = document.querySelector('#catalog-list');
 const exampleButtons = document.querySelectorAll('[data-example]');
 const playbackStatus = document.querySelector('#playback-status');
 const sequenceVideo = document.querySelector('#sequence-video');
@@ -240,27 +238,6 @@ function renderResult(inputText) {
   preparePlayback(result);
   renderRecognized(result);
   renderUnknown(result);
-}
-
-function renderCatalog() {
-  clearChildren(catalogList);
-
-  for (const group of entriesByCategory()) {
-    const card = createElement('article', 'category-card');
-    card.appendChild(createElement('h3', null, group.category));
-    const list = document.createElement('ul');
-
-    for (const entry of group.entries) {
-      const item = document.createElement('li');
-      item.textContent = entry.videoPath
-        ? `${entry.displayLabel} — video declarado en catálogo`
-        : `${entry.displayLabel} — pendiente de video`;
-      list.appendChild(item);
-    }
-
-    card.appendChild(list);
-    catalogList.appendChild(card);
-  }
 }
 
 function selectLesson(lesson) {
@@ -778,7 +755,6 @@ customLabelInput.addEventListener('input', syncCaptureButtons);
 window.addEventListener('pagehide', cleanupCapture);
 window.addEventListener('beforeunload', cleanupCapture);
 
-renderCatalog();
 renderLessons();
 renderPractice();
 renderCatalogLabelOptions();
