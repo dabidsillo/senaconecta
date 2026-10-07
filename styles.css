@@ -86,7 +86,6 @@ select:focus-visible {
 }
 
 .site-hero,
-.topbar,
 main {
   width: min(var(--content-max), 100%);
   margin: 0 auto;
@@ -99,6 +98,7 @@ main {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
   min-height: var(--topbar-height);
   overflow-x: auto;
   background: rgb(255 250 241 / 96%);
@@ -123,6 +123,10 @@ main {
 
 .brand {
   text-decoration: none;
+}
+
+.nav-links {
+  margin-left: auto;
 }
 
 .brand-mark {
