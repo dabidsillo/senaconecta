@@ -60,6 +60,8 @@ nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
 
 Estos ejemplos son literales del proyecto. La última llave de CSS está más abajo en el archivo: se muestra solo el comienzo para que sea corto.
 
+Para mirar el aspecto de la página con ejemplos breves, seguí con [CSS paso a paso](codigo-css-paso-a-paso.md). Explica colores, foco de teclado, la galería horizontal y qué cambia en pantallas más anchas.
+
 ### Tres palabras que podés reconocer
 
 - `#lesson-list` significa “el elemento con ese identificador único”; en HTML aparece como `id="lesson-list"`.
