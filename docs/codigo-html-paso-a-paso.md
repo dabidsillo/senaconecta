@@ -60,7 +60,7 @@ Esta guía te deja leer la página real de Tinku sin saber programar. **HTML org
     type="text"
     inputmode="text"
     maxlength="160"
-    placeholder="Ej.: Hola, ¿cómo estás?"
+    placeholder="Ej.: Hola, mamá"
     aria-describedby="lookup-help"
   >
   <button type="submit">Buscar</button>
@@ -91,7 +91,7 @@ Esta guía te deja leer la página real de Tinku sin saber programar. **HTML org
 - **Qué significa:** `role="group"` reúne controles relacionados; `role="region"` y `aria-label` nombran la galería. `tabindex="0"` permite enfocarla con teclado. `aria-describedby` enlaza las instrucciones para recorrerla.
 - **Qué pasa al usarlo:** JavaScript crea las tarjetas desde el catálogo; CSS las acomoda horizontalmente. Los botones avanzan o retroceden. La práctica es textual y se reinicia al recargar porque no se guarda fuera de la pestaña.
 
-## 5. Cámara: vista previa, etiqueta y descargas
+## 5. Cámara: vista previa, etiqueta y guardado local
 
 ```html
 <label for="custom-label">O etiqueta personalizada</label>
@@ -115,13 +115,18 @@ Esta guía te deja leer la página real de Tinku sin saber programar. **HTML org
 
 ```html
 <video id="recorded-preview" class="capture-video" controls preload="metadata" hidden></video>
-<a id="download-video" class="download-button" download hidden>Descargar video</a>
-<a id="download-metadata" class="download-button" download hidden>Descargar metadata JSON</a>
+<div class="save-actions">
+  <button id="save-recording" type="button" disabled>Guardar seña</button>
+</div>
+<section class="saved-recordings" aria-labelledby="saved-recordings-title">
+  <h3 id="saved-recordings-title">Señas guardadas localmente</h3>
+  <ul id="saved-recordings-list" class="saved-recordings-list" aria-live="polite"></ul>
+</section>
 ```
 
-- **Qué miro:** una segunda vista previa y dos enlaces de descarga inicialmente ocultos.
-- **Qué significa:** `controls` pide controles nativos de reproducción; `download` indica que el enlace es para bajar un archivo. El JSON describe el clip y su etiqueta, no valida una seña.
-- **Qué pasa al usarlo:** después de una grabación, JavaScript muestra la vista previa y permite descargar video y metadata JSON. El material queda temporalmente en memoria hasta reemplazarlo o cerrar/recargar la página; descargalo si necesitás conservarlo.
+- **Qué miro:** una segunda vista previa, el botón **Guardar seña** y una lista inicialmente vacía.
+- **Qué significa:** `controls` pide controles nativos de reproducción. El botón permanece deshabilitado hasta que exista un clip pendiente; la lista recibe las señas guardadas y sus acciones de reproducir o eliminar. No hay enlaces ni botones de descarga en la interfaz actual.
+- **Qué pasa al usarlo:** al terminar una grabación, JavaScript muestra una vista previa temporal. Solo al elegir **Guardar seña**, guarda el `Blob` del video y su metadata en IndexedDB, dentro de este navegador y este origen (por ejemplo, el mismo `http://localhost:8000` o sitio HTTPS). Después se puede listar, reproducir localmente o eliminar el registro. El navegador puede rechazar el guardado por cuota o borrar datos del sitio; antes de registrar a otra persona, corresponde obtener su consentimiento.
 
 ## Probá y observá
 

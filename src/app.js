@@ -927,7 +927,7 @@ function finishRecording(sessionId, recorder) {
   if (recorderFailed || recordedChunks.length === 0 || !isResolvedLabelValid(resolvedLabel)) {
     recordedChunks = [];
     recorderFailed = false;
-    setCaptureStatus('La grabación no produjo video descargable. Probá de nuevo con otro navegador o un clip más corto.');
+    setCaptureStatus('La grabación no produjo un video para guardar. Probá de nuevo con otro navegador o un clip más corto.');
     syncCaptureButtons();
     return;
   }

@@ -1,9 +1,9 @@
-# JavaScript: cámara, clips y descargas
+# JavaScript: cámara, clips y guardado local
 
 Esta guía sigue el recorrido de la cámara de Tinku sin pedirte que memorices JavaScript. Vas a poder explicar qué se necesita para grabar, qué datos acompaña al clip y por qué nada se sube solo. Leela junto con la [guía para estudiantes](guia-para-estudiantes.md). **Si recién empezás, leé primero el mapa, el ejemplo y el ejercicio; dejá los fragmentos técnicos para una segunda pasada acompañada.**
 
 ## Mapa corto
-El navegador comprueba si puede pedir cámara y grabar video. Con permiso, guarda una transmisión activa y habilita los botones correctos. Una etiqueta del catálogo identifica el clip; una etiqueta escrita por la persona tiene prioridad. Al empezar, la etiqueta queda fija; al terminar se preparan un video y un JSON para descargar. Al recargar, cerrar o iniciar otra captura, se libera la memoria temporal.
+El navegador comprueba si puede pedir cámara y grabar video. Con permiso, guarda una transmisión activa y habilita los botones correctos. Una etiqueta del catálogo identifica el clip; una etiqueta escrita por la persona tiene prioridad. Al empezar, la etiqueta queda fija; al terminar queda una vista previa temporal. Solo al elegir **Guardar seña**, el video y sus datos se persisten en IndexedDB de este navegador y origen. Al recargar, cerrar o iniciar otra captura, se libera la memoria temporal; las señas guardadas siguen disponibles hasta que se eliminen o el navegador limpie los datos del sitio.
 
 > **Límite importante:** esto no reconoce señas, no traduce, no valida una seña LSB y no sube archivos. Una etiqueta dice qué se quiso registrar; la revisión humana decide después si el clip es útil.
 
@@ -74,7 +74,7 @@ No hace falta seguir cada signo. La idea es evitar combinaciones confusas: no se
 
 En la pantalla se puede elegir **categoría → palabra o frase** del catálogo. Eso conserva tanto el texto como `catalogId`, el identificador exacto de la entrada. También existe una etiqueta personalizada. Si hay texto personalizado, gana sobre la selección del catálogo; puede usarse incluso sin categoría.
 
-**Extracto literal de `src/capture.mjs` (`resolveCaptureLabel`):**
+**Extracto simplificado de `src/capture.mjs` (`resolveCaptureLabel`; retornos compactados para estudiar la prioridad):**
 
 ```js
 const cleanedCustomLabel = normalizeCustomLabel(customLabel);
@@ -91,9 +91,9 @@ Esta prioridad es deliberada: una persona que escribe una corrección o una desc
 
 ### Ejemplo concreto: Familia → Papá
 
-Elegí **Familia** y luego **Papá**; no escribas nada en “etiqueta personalizada”. Al iniciar, el clip queda asociado a `label: "Papá"`, `labelSource: "catalog"` y al `catalogId` propio de Papá. Para una fecha de ejemplo `2024-01-02T03:04:05.006Z`, el nombre base seguro tendría esta forma: `tinku-capture-papa-2024-01-02T03-04-05-006Z`. La pareja descargable usa el mismo base: `… .webm` (o `.mp4`, si ese fue el formato) y `… .json`.
+Elegí **Familia** y luego **Papá**; no escribas nada en “etiqueta personalizada”. Al iniciar, el clip queda asociado a `label: "Papá"`, `labelSource: "catalog"` y al `catalogId` propio de Papá. La interfaz actual no genera nombres de archivo ni ofrece descargas: permite revisar el clip y elegir explícitamente si se guarda localmente.
 
-El nombre de archivo elimina tildes para que sea más compatible, pero el JSON conserva `Papá`. No confundas **Familia → Papá** con **Verduras → Papa**: se distinguen por categoría e identificador. Tampoco escribas una etiqueta propia `Papa` si querías conservar el vínculo del catálogo con **Papá**; una etiqueta propia reemplaza ese vínculo y deja `catalogId` en `null`.
+El metadata conserva `Papá`. Una etiqueta propia reemplaza el vínculo del catálogo y deja `catalogId` en `null`. Aunque `createSafeFileStem` y `createMetadataBlob` siguen exportados desde `src/capture.mjs`, la interfaz actual no los usa.
 
 ## Congelar la etiqueta al comenzar
 
@@ -144,9 +144,9 @@ recordingLimitTimer = window.setTimeout(() => {
 
 También hay protecciones para sesiones viejas o eventos tardíos: cada grabación recibe un número, el evento `stop` se acepta solo si pertenece al grabador actual y hay una espera de hasta tres segundos para que el navegador confirme el final. Si no confirma, no se prepara un clip parcial. Es mejor pedir reintentar que ofrecer un archivo dudoso.
 
-## Del video temporal al video y JSON descargables
+## Del video temporal al guardado explícito
 
-Cuando llega el final correcto, los pedacitos de video se unen en un `Blob`. Luego se crea un objeto con datos como etiqueta, `catalogId`, tipo MIME, tamaño, duración y fechas. Ese objeto declara explícitamente `upload: "none"`.
+Cuando llega el final correcto, los pedacitos de video se unen en un `Blob`. Luego se crea un objeto con datos como etiqueta, `catalogId`, tipo MIME, tamaño, duración y fechas. Antes de guardar, ese objeto declara que está en memoria de la pestaña; no se sube.
 
 **Extracto literal de `src/capture.mjs` (`buildCaptureMetadata`; se omitieron otros campos):**
 
@@ -156,48 +156,36 @@ return {
   warning: 'Esta captura etiquetada no es una traducción ni reconocimiento automático de señas.',
   label: resolvedLabel?.label ?? '',
   catalogId: resolvedLabel?.catalogId ?? null,
-  storage: 'browser-memory-until-explicit-download',
+  storage: 'browser-memory-until-explicit-save',
   upload: 'none'
 };
 ```
 
-**Extracto literal de `src/app.js` (`finishRecording`; se omitieron asignaciones de vista previa):**
+Al elegir **Guardar seña**, `src/app.js` usa `captureStore.save(video, metadata)`. `src/capture.mjs` crea entonces una copia con `storage: 'browser-indexeddb-after-explicit-save'`; `src/capture-store.mjs` guarda el `Blob` y la metadata bajo el mismo identificador. La lista lee primero solo metadata (`list()`); al reproducir, `get(id)` recupera el `Blob`; y **Eliminar** ejecuta `delete(id)` para ambos registros. No hay descarga ni backend.
 
-```js
-const videoBlob = new Blob(recordedChunks, { type: selectedMimeType || 'video/webm' });
-const metadataBlob = createMetadataBlob(metadata);
-
-recordingObjectUrl = URL.createObjectURL(videoBlob);
-metadataObjectUrl = URL.createObjectURL(metadataBlob);
-```
-
-Esas URL temporales alimentan la vista previa y los dos enlaces: **Descargar video** y **Descargar metadata JSON**. Descargar copia un archivo al lugar que elija el navegador; no borra la vista previa, porque la página todavía conserva sus URL y `Blob` temporales para que puedas mirar el resultado y revisar el JSON.
+IndexedDB pertenece al origen del navegador: una seña guardada en `http://localhost:8000` no aparece automáticamente en otro puerto, dominio, perfil o dispositivo. El guardado puede fallar si el navegador no ofrece IndexedDB, otra pestaña bloquea una actualización o se alcanza la cuota. La persona debe decidir guardar y obtener el consentimiento correspondiente antes de grabar a otras personas.
 
 ## Palabras nuevas, en simple
 
-- **Blob:** una caja temporal de datos en memoria. Aquí puede contener el video o el texto JSON antes de la descarga.
+- **Blob:** una caja temporal de datos en memoria. Aquí contiene el video antes de su guardado explícito o de su reproducción local.
 - **JSON:** texto ordenado con pares de nombre y valor, útil para acompañar el video con datos como `label` y `catalogId`.
 - **Evento:** aviso de que algo ocurrió, como llegar un fragmento de video o terminar el grabador.
 - **MIME:** etiqueta técnica que indica el tipo de contenido, por ejemplo `video/webm` o `application/json`.
 
 ## Liberar memoria al reemplazar, recargar o cerrar
 
-Al iniciar otra grabación, la aplicación libera las URL del clip anterior y borra su vista previa. Si solo presionás **Detener cámara**, el clip ya preparado y sus descargas siguen disponibles mientras la página permanece abierta. Al recargar o salir de la página, se detienen las pistas y se liberan la vista previa y los archivos temporales. Por eso hay que descargar los dos archivos antes de recargar o cerrar si querés conservarlos.
+Al iniciar otra grabación, la aplicación libera la URL de objeto de la vista previa pendiente y borra esa vista previa. Al reproducir una seña guardada, crea otra URL de objeto para ese `Blob`; al cambiar de selección, eliminar la seña o salir de la página, también la revoca. Si solo presionás **Detener cámara**, el clip pendiente sigue disponible en memoria para guardarlo; las señas ya guardadas siguen en IndexedDB. Al recargar o salir de la página, se detienen las pistas y se libera la vista previa temporal.
 
-**Extracto literal de `src/app.js` (`revokeCaptureUrls`):**
+**Extracto literal de `src/app.js` (`revokePendingPreviewUrl`):**
 
 ```js
-if (recordingObjectUrl) {
-  URL.revokeObjectURL(recordingObjectUrl);
-  recordingObjectUrl = null;
-}
-if (metadataObjectUrl) {
-  URL.revokeObjectURL(metadataObjectUrl);
-  metadataObjectUrl = null;
+if (pendingPreviewObjectUrl) {
+  URL.revokeObjectURL(pendingPreviewObjectUrl);
+  pendingPreviewObjectUrl = null;
 }
 ```
 
-Esto no borra un archivo que ya descargaste. Solo suelta la referencia temporal que la pestaña usaba. El README también indica que los videos locales revisados pertenecen a `videos/`, una carpeta ignorada por Git: no se publican automáticamente en GitHub ni el sitio los recibe por esa vía.
+`revokeSavedPreviewUrl` aplica el mismo patrón a la URL de una seña leída desde IndexedDB. Revocar una URL de objeto no borra el registro guardado: solo suelta la referencia temporal de reproducción que usaba la pestaña.
 
 ## Revisión humana y cuidado de las personas
 
@@ -205,10 +193,10 @@ Antes de reutilizar un clip, una persona competente debe revisarlo: encuadre, et
 
 ## Ejercicio sin cámara
 
-Sin grabar ni pedir permiso, elegí en la interfaz **Familia → Papá** y explicá en una hoja qué esperás encontrar en los dos archivos: un video y un JSON con la etiqueta `Papá`, una fuente `catalog` y su `catalogId`. Después cambiá mentalmente a la etiqueta propia `Papa` y señalá dos diferencias: reemplazaría al catálogo y no tendría `catalogId`. Resultado esperado: podés distinguir el nombre visible, el identificador del catálogo y un nombre de archivo sin tilde sin afirmar que hubo reconocimiento o una seña validada.
+Sin grabar ni pedir permiso, elegí en la interfaz **Familia → Papá** y explicá en una hoja qué metadata acompañaría al clip: la etiqueta `Papá`, una fuente `catalog` y su `catalogId`. Después imaginá una etiqueta propia y señalá dos diferencias: reemplazaría al catálogo y no tendría `catalogId`. Resultado esperado: podés distinguir una vista previa temporal de una seña guardada explícitamente en IndexedDB, sin afirmar que hubo reconocimiento o una seña validada.
 
 ## Seguí el recorrido
 
 - Para entender la página donde están los botones, leé [HTML paso a paso](codigo-html-paso-a-paso.md).
-- Para cámara, descargas y límites desde el uso cotidiano, volvé a la [guía para estudiantes](guia-para-estudiantes.md).
+- Para cámara, guardado local y límites desde el uso cotidiano, volvé a la [guía para estudiantes](guia-para-estudiantes.md).
 - Para catálogo, búsqueda y práctica, continuá con [JavaScript: catálogo, diccionario y lecciones](codigo-js-catalogo-y-lecciones.md).

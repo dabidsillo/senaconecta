@@ -19,7 +19,7 @@ galería: botones y eventos ──────────┴──> desplazamie
 
 ## 1. Un catálogo compartido, sin videos inventados
 
-`src/catalog.mjs` convierte las categorías y sus listas en `STARTER_CATALOG`: 112 entradas de texto en 15 categorías. La misma lista alimenta diccionario, búsqueda y lecciones.
+`src/catalog.mjs` convierte las categorías y sus listas en `STARTER_CATALOG`: 45 entradas de texto en 9 categorías. La misma lista alimenta diccionario, búsqueda y lecciones.
 
 **`src/catalog.mjs` — extracto exacto**
 
@@ -82,7 +82,7 @@ para cada posición de la lista de palabras:
   si no aparece: agregar esa palabra a “desconocidas” y avanzar una posición
 ```
 
-La búsqueda de frase larga reconoce, por ejemplo, `¿Cómo estás?` antes que partes separadas. El orden escrito se conserva. Como `Papá` y `Papa` normalizan a `papa`, la búsqueda libre puede devolver las dos; el selector del próximo paso no.
+La búsqueda de frase larga reconoce, por ejemplo, `Lo siento` o `Por favor` antes que separar esas palabras. El orden escrito se conserva. Las etiquetas visibles conservan sus tildes, aunque la búsqueda no las exige.
 
 **`src/app.js` — extractos exactos; líneas intermedias omitidas**
 
@@ -103,14 +103,14 @@ Al enviar, el evento toma lo escrito y llama a `renderResult`; esta llama a `loo
 
 ### Probalo: frase y desconocida
 
-1. Buscá `¿Cómo estás? misterio` y enviá el formulario.
+1. Buscá `Lo siento, misterio` y enviá el formulario.
 2. Revisá reconocidas y desconocidas.
 
-**Resultado esperado:** reconoce la frase y deja `misterio` como desconocida.
+**Resultado esperado:** reconoce la frase real `Lo siento` y deja `misterio` como desconocida.
 
 ## 3. Selector: categoría más ID exacto
 
-La búsqueda libre puede ser ambigua. El selector primero limita por categoría y luego exige que el identificador coincida; así distingue **Familia → Papá** de **Verduras → Papa**.
+El selector primero limita por categoría y luego exige que el identificador coincida. Así, **Familia → Papá** y **Saludos → Lo siento** son elecciones exactas del catálogo actual.
 
 **`src/dictionary-select.mjs` — extracto exacto**
 
@@ -120,7 +120,7 @@ export function resolveDictionaryEntry(category, entryId, catalog = STARTER_CATA
 }
 ```
 
-`find` recorre la array. El `&&` exige categoría **e** identificador. `return` entrega la entrada o `null` si no existe: un ID de Familia no sirve dentro de Verduras.
+`find` recorre la array. El `&&` exige categoría **e** identificador. `return` entrega la entrada o `null` si no existe: un ID de Familia no sirve dentro de Saludos.
 
 **`src/app.js` — extracto exacto**
 
@@ -143,16 +143,16 @@ dictionaryWordSelect.addEventListener('change', () => {
 
 El dibujo de resultados crea nodos y pone etiquetas con `textContent`; por eso el texto ingresado no se interpreta como HTML. El catálogo actual tiene `videoPath: null`, de modo que no hay video para reproducir.
 
-### Probalo: Papá y Papa
+### Probalo: dos selecciones exactas
 
 1. Elegí **Familia → Papá**.
-2. Cambiá a **Verduras** y elegí **Papa**.
+2. Cambiá a **Saludos** y elegí **Lo siento**.
 
 **Resultado esperado:** la lista de palabra se reinicia al cambiar categoría y cada selección muestra su categoría correcta.
 
 ## 4. Lecciones: misma lista, progreso en memoria
 
-`src/lessons.mjs` agrupa el catálogo compartido. Crea una lección por categoría con dos o más entradas, por lo que las lecciones también reúnen las 112 etiquetas en 15 categorías.
+`src/lessons.mjs` agrupa el catálogo compartido. Crea una lección por categoría con dos o más entradas, por lo que las lecciones también reúnen las 45 etiquetas en 9 categorías.
 
 **Pseudocódigo — no es código para pegar ni ejecutar**
 

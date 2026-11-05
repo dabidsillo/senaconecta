@@ -131,23 +131,36 @@ Antes de la lista, `.lessons-panel { min-width: 0; }` permite que la sección ma
 ```
 - **Qué ves:** clases de la galería `id="lesson-list"` y sus tarjetas; es un recorte parcial. **Qué significa:** cada columna mide por lo menos `15rem`, usa `72vw` como tamaño adaptable al ancho de la ventana y no supera `20rem`; los límites en línea contienen la lista. El desplazamiento y `scroll-snap` se conservan. **Qué pasa:** se recorren horizontalmente; JavaScript crea las tarjetas y CSS las presenta.
 
-## 5. Cámara y descargas
+## 5. Cámara y guardado local
 ```css
 .camera-grid {
   display: grid;
   gap: 1rem;
 }
 
-.download-button {
-  display: inline-flex;
-  min-height: 44px;
-  border-radius: 999px;
+.capture-actions,
+.save-actions {
+  align-self: start;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.save-actions button {
   background: var(--success);
-  color: #fff;
-  text-decoration: none;
+}
+
+.saved-recordings {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  background: rgb(255 255 255 / 70%);
+  padding: 1rem;
 }
 ```
-- **Qué ves:** una cuadrícula para cámara y una clase para enlaces de descarga. **Qué significa:** `inline-flex` acomoda contenido como botón sin dejar de ser enlace. **Qué pasa:** reciben forma y tamaño; CSS no pide cámara, graba ni crea archivos.
+- **Qué ves:** una cuadrícula para cámara, el contenedor `.save-actions` del botón **Guardar seña** y el panel `.saved-recordings` de la lista local. **Qué significa:** `align-self` y `justify-self` mantienen las acciones al inicio de su celda; `fit-content` evita que el contenedor se estire innecesariamente. El botón de guardado usa el color de éxito y el panel recibe borde, fondo y espacio.
+- **Qué pasa:** la interfaz separa la captura pendiente de la lista de señas guardadas. CSS solo presenta esos estados: JavaScript decide cuándo se habilita guardar, lee IndexedDB y crea los botones de reproducir o eliminar; no descarga ni crea archivos.
 
 ## 6. Pantalla ancha y menos movimiento
 ```css
