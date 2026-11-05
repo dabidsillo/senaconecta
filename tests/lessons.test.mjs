@@ -9,40 +9,34 @@ import {
 } from '../src/lessons.mjs';
 
 const EXPECTED_CATEGORIES = [
-  'SALUDOS',
-  'FAMILIA',
   'ALIMENTOS',
-  'LUGARES',
-  'COLORES',
   'ANIMALES',
-  'DEPARTAMENTOS DE BOLIVIA',
-  'NATURALEZA',
-  'MEDIOS DE TRANSPORTE',
-  'VERDURAS',
+  'COLORES',
+  'DEPARTAMENTOS',
+  'DÍAS DE LA SEMANA',
+  'FAMILIA',
   'FRUTAS',
-  'VERBOS',
-  'PRONOMBRES',
-  'NÚMEROS',
-  'DÍAS DE LA SEMANA'
+  'LUGARES',
+  'SALUDOS'
 ].sort((a, b) => a.localeCompare(b, 'es'));
 
-test('buildBeginnerLessons creates all 15 category lessons from the shared final vocabulary', () => {
+test('buildBeginnerLessons creates all 9 category lessons from the shared final vocabulary', () => {
   const lessons = buildBeginnerLessons(STARTER_CATALOG);
 
   assert.deepEqual(lessons.map((lesson) => lesson.category), EXPECTED_CATEGORIES);
-  assert.equal(lessons.length, 15);
-  assert.equal(lessons.reduce((count, lesson) => count + lesson.entries.length, 0), 112);
+  assert.equal(lessons.length, 9);
+  assert.equal(lessons.reduce((count, lesson) => count + lesson.entries.length, 0), 45);
   assert.ok(lessons.every((lesson, index) => lesson.position === index + 1));
   assert.ok(lessons.every((lesson) => lesson.entries.every((entry) => entry.validationStatus === 'placeholder')));
 });
 
 test('buildBeginnerLessons formats the selected lesson title while retaining its stable ID', () => {
   const lesson = buildBeginnerLessons(STARTER_CATALOG)
-    .find((candidate) => candidate.category === 'DEPARTAMENTOS DE BOLIVIA');
+    .find((candidate) => candidate.category === 'DEPARTAMENTOS');
 
-  assert.equal(lesson.title, 'Departamentos de Bolivia: primeras etiquetas');
-  assert.equal(lesson.id, 'lesson-4-departamentos-de-bolivia');
-  assert.equal(lesson.category, 'DEPARTAMENTOS DE BOLIVIA');
+  assert.equal(lesson.title, 'Departamentos: primeras etiquetas');
+  assert.equal(lesson.id, 'lesson-4-departamentos');
+  assert.equal(lesson.category, 'DEPARTAMENTOS');
 });
 
 test('buildBeginnerLessons rejects empty or one-card categories for beginner progression', () => {

@@ -13,39 +13,27 @@ import {
 } from '../src/catalog.mjs';
 
 const EXPECTED_CATEGORY_LABELS = {
-  SALUDOS: 'Saludos',
-  FAMILIA: 'Familia',
   ALIMENTOS: 'Alimentos',
-  LUGARES: 'Lugares',
-  COLORES: 'Colores',
   ANIMALES: 'Animales',
-  'DEPARTAMENTOS DE BOLIVIA': 'Departamentos de Bolivia',
-  NATURALEZA: 'Naturaleza',
-  'MEDIOS DE TRANSPORTE': 'Medios de transporte',
-  VERDURAS: 'Verduras',
+  COLORES: 'Colores',
+  DEPARTAMENTOS: 'Departamentos',
+  'DÍAS DE LA SEMANA': 'Días de la semana',
+  FAMILIA: 'Familia',
   FRUTAS: 'Frutas',
-  VERBOS: 'Verbos',
-  PRONOMBRES: 'Pronombres',
-  NÚMEROS: 'Números',
-  'DÍAS DE LA SEMANA': 'Días de la semana'
+  LUGARES: 'Lugares',
+  SALUDOS: 'Saludos'
 };
 
 const EXPECTED_INVENTORY = {
-  SALUDOS: ['Hola', 'Chau', 'Buenos días', 'Buenas tardes', 'Buenas noches', 'Gracias', 'Por favor', '¿Cómo estás?', 'Estoy bien', 'Mal', 'Más o menos', 'Sí', 'No', 'Lo siento', 'Te amo'],
-  FAMILIA: ['Papá', 'Mamá', 'Bebé', 'Abuelo', 'Abuela', 'Hijo', 'Hija', 'Hermano', 'Hermana'],
-  ALIMENTOS: ['Pan', 'Leche', 'Carne', 'Fideo', 'Queso', 'Arroz', 'Sal', 'Aceite', 'Café', 'Azúcar', 'Té'],
-  LUGARES: ['Casa', 'Cuarto', 'Baño', 'Escuela', 'Hospital', 'Iglesia', 'Farmacia', 'Mercado'],
-  COLORES: ['Rojo', 'Amarilla', 'Azul', 'Verde'],
-  ANIMALES: ['Perro', 'Gato', 'Vaca', 'Cóndor', 'Gallina'],
-  'DEPARTAMENTOS DE BOLIVIA': ['Santa Cruz', 'La Paz', 'Cochabamba', 'Oruro', 'Tarija', 'Beni', 'Chuquisaca', 'Potosí', 'Pando'],
-  NATURALEZA: ['Frío', 'Calor', 'Sol', 'Lluvia'],
-  'MEDIOS DE TRANSPORTE': ['Auto', 'Flota', 'Micro', 'Trufi', 'Motocicleta'],
-  VERDURAS: ['Tomate', 'Cebolla', 'Zanahoria', 'Papa'],
-  FRUTAS: ['Manzana', 'Naranja', 'Uva', 'Plátano', 'Guineo', 'Piña'],
-  VERBOS: ['Cocinar', 'Comprar', 'Vender', 'Aprender', 'Comer', 'Dibujar', 'Dormir', 'Ayudar'],
-  PRONOMBRES: ['Yo', 'Tú', 'Nosotros', 'Él', 'Ella', 'Nuestro'],
-  NÚMEROS: ['Cero', 'Uno', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'],
-  'DÍAS DE LA SEMANA': ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  ALIMENTOS: ['Arroz', 'Café', 'Fideo', 'Leche', 'Pan'],
+  ANIMALES: ['Cóndor', 'Gallina', 'Gato', 'Perro', 'Vaca'],
+  COLORES: ['Amarillo', 'Azul', 'Rojo', 'Verde'],
+  DEPARTAMENTOS: ['Beni', 'La Paz', 'Oruro', 'Potosí', 'Santa Cruz'],
+  'DÍAS DE LA SEMANA': ['Jueves', 'Lunes', 'Martes', 'Miércoles', 'Viernes'],
+  FAMILIA: ['Bebé', 'Hija', 'Hijo', 'Mamá', 'Papá'],
+  FRUTAS: ['Guineo', 'Manzana', 'Naranja', 'Piña', 'Plátano'],
+  LUGARES: ['Baño', 'Casa', 'Escuela', 'Hospital', 'Mercado'],
+  SALUDOS: ['Chau', 'Gracias', 'Hola', 'Lo siento', 'Por favor', 'Te amo']
 };
 
 test('normalizeText ignores Spanish accents, surrounding spaces, and case', () => {
@@ -56,9 +44,9 @@ test('tokenizeText returns word tokens without executable markup', () => {
   assert.deepEqual(tokenizeText('<img src=x onerror=alert(1)> Agua'), ['img', 'src', 'x', 'onerror', 'alert', '1', 'agua']);
 });
 
-test('catalog contains the exact 112 supplied entries in the 15 supplied categories', () => {
-  assert.equal(CATALOG_VERSION, 'final-vocabulary-v2');
-  assert.equal(STARTER_CATALOG.length, 112);
+test('catalog contains the exact 45 supplied entries in the 9 supplied categories', () => {
+  assert.equal(CATALOG_VERSION, 'final-vocabulary-v3');
+  assert.equal(STARTER_CATALOG.length, 45);
   assert.deepEqual(
     Object.fromEntries(Object.entries(EXPECTED_INVENTORY).map(([category]) => [
       category,
@@ -89,34 +77,35 @@ test('catalog retains user-provided spelling and placeholder media status withou
   }
 
   assert.deepEqual(
-    STARTER_CATALOG.filter((entry) => ['Papá', 'Papa', 'Sí', 'Tú', 'Él', 'Café', 'Té', 'Amarilla', 'Guineo', 'Flota', 'Trufi', 'Nuestro'].includes(entry.displayLabel))
+    STARTER_CATALOG.filter((entry) => ['Papá', 'Mamá', 'Café', 'Cóndor', 'Potosí', 'Piña', 'Plátano', 'Baño'].includes(entry.displayLabel))
       .map((entry) => entry.displayLabel),
-    ['Sí', 'Papá', 'Café', 'Té', 'Amarilla', 'Flota', 'Trufi', 'Papa', 'Guineo', 'Tú', 'Él', 'Nuestro']
+    ['Café', 'Cóndor', 'Potosí', 'Mamá', 'Papá', 'Piña', 'Plátano', 'Baño']
   );
 });
 
-test('lookupText recognizes longest multiword phrases in order and leaves only unmatched tokens unknown', () => {
-  const result = lookupText('¿Cómo estás? Más o menos Santa Cruz La Paz Por favor misterio');
+test('lookupText recognizes current multiword phrases in order and leaves only unmatched tokens unknown', () => {
+  const result = lookupText('Hola mamá Lo siento papá Por favor amigo Santa Cruz La Paz misterio');
 
   assert.deepEqual(
     result.recognized.map((item) => [item.token, item.entry.displayLabel]),
     [
-      ['como estas', '¿Cómo estás?'],
-      ['mas o menos', 'Más o menos'],
+      ['hola', 'Hola'],
+      ['mama', 'Mamá'],
+      ['lo siento', 'Lo siento'],
+      ['papa', 'Papá'],
+      ['por favor', 'Por favor'],
       ['santa cruz', 'Santa Cruz'],
-      ['la paz', 'La Paz'],
-      ['por favor', 'Por favor']
+      ['la paz', 'La Paz']
     ]
   );
-  assert.deepEqual(result.unknown, ['misterio']);
+  assert.deepEqual(result.unknown, ['amigo', 'misterio']);
 });
 
-test('lookupText returns both family Papá and vegetable Papa for their shared lexical form', () => {
+test('lookupText resolves Papá uniquely after removing the Papa vegetable', () => {
   const result = lookupText('papa');
 
   assert.deepEqual(result.recognized.map((item) => [item.entry.category, item.entry.displayLabel]), [
-    ['FAMILIA', 'Papá'],
-    ['VERDURAS', 'Papa']
+    ['FAMILIA', 'Papá']
   ]);
   assert.deepEqual(result.unknown, []);
 });

@@ -1,21 +1,15 @@
-export const CATALOG_VERSION = 'final-vocabulary-v2';
+export const CATALOG_VERSION = 'final-vocabulary-v3';
 
 const VOCABULARY_BY_CATEGORY = Object.freeze({
-  SALUDOS: ['Hola', 'Chau', 'Buenos días', 'Buenas tardes', 'Buenas noches', 'Gracias', 'Por favor', '¿Cómo estás?', 'Estoy bien', 'Mal', 'Más o menos', 'Sí', 'No', 'Lo siento', 'Te amo'],
-  FAMILIA: ['Papá', 'Mamá', 'Bebé', 'Abuelo', 'Abuela', 'Hijo', 'Hija', 'Hermano', 'Hermana'],
-  ALIMENTOS: ['Pan', 'Leche', 'Carne', 'Fideo', 'Queso', 'Arroz', 'Sal', 'Aceite', 'Café', 'Azúcar', 'Té'],
-  LUGARES: ['Casa', 'Cuarto', 'Baño', 'Escuela', 'Hospital', 'Iglesia', 'Farmacia', 'Mercado'],
-  COLORES: ['Rojo', 'Amarilla', 'Azul', 'Verde'],
-  ANIMALES: ['Perro', 'Gato', 'Vaca', 'Cóndor', 'Gallina'],
-  'DEPARTAMENTOS DE BOLIVIA': ['Santa Cruz', 'La Paz', 'Cochabamba', 'Oruro', 'Tarija', 'Beni', 'Chuquisaca', 'Potosí', 'Pando'],
-  NATURALEZA: ['Frío', 'Calor', 'Sol', 'Lluvia'],
-  'MEDIOS DE TRANSPORTE': ['Auto', 'Flota', 'Micro', 'Trufi', 'Motocicleta'],
-  VERDURAS: ['Tomate', 'Cebolla', 'Zanahoria', 'Papa'],
-  FRUTAS: ['Manzana', 'Naranja', 'Uva', 'Plátano', 'Guineo', 'Piña'],
-  VERBOS: ['Cocinar', 'Comprar', 'Vender', 'Aprender', 'Comer', 'Dibujar', 'Dormir', 'Ayudar'],
-  PRONOMBRES: ['Yo', 'Tú', 'Nosotros', 'Él', 'Ella', 'Nuestro'],
-  NÚMEROS: ['Cero', 'Uno', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'],
-  'DÍAS DE LA SEMANA': ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  ALIMENTOS: ['Arroz', 'Café', 'Fideo', 'Leche', 'Pan'],
+  ANIMALES: ['Cóndor', 'Gallina', 'Gato', 'Perro', 'Vaca'],
+  COLORES: ['Amarillo', 'Azul', 'Rojo', 'Verde'],
+  DEPARTAMENTOS: ['Beni', 'La Paz', 'Oruro', 'Potosí', 'Santa Cruz'],
+  'DÍAS DE LA SEMANA': ['Jueves', 'Lunes', 'Martes', 'Miércoles', 'Viernes'],
+  FAMILIA: ['Bebé', 'Hija', 'Hijo', 'Mamá', 'Papá'],
+  FRUTAS: ['Guineo', 'Manzana', 'Naranja', 'Piña', 'Plátano'],
+  LUGARES: ['Baño', 'Casa', 'Escuela', 'Hospital', 'Mercado'],
+  SALUDOS: ['Chau', 'Gracias', 'Hola', 'Lo siento', 'Por favor', 'Te amo']
 });
 
 const WORD_PATTERN = /[\p{L}\p{N}]+/gu;

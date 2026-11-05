@@ -8,41 +8,39 @@ import {
   resolveDictionaryEntry
 } from '../src/dictionary-select.mjs';
 
-test('dictionary selectors expose all 15 shared catalog categories', () => {
+test('dictionary selectors expose all 9 shared catalog categories', () => {
   const categories = getDictionaryCategories();
 
-  assert.equal(categories.length, 15);
-  assert.equal(categories.reduce((count, category) => count + getDictionaryEntries(category).length, 0), 112);
+  assert.equal(categories.length, 9);
+  assert.equal(categories.reduce((count, category) => count + getDictionaryEntries(category).length, 0), 45);
 });
 
 test('changing category clears the selected word and loads only that category', () => {
   const family = STARTER_CATALOG.find((entry) => entry.category === 'FAMILIA' && entry.displayLabel === 'Papá');
-  const vegetables = changeDictionaryCategory('VERDURAS');
+  const foods = changeDictionaryCategory('ALIMENTOS');
 
   assert.ok(family);
-  assert.equal(vegetables.entryId, '');
-  assert.deepEqual(vegetables.entries.map((entry) => entry.category), ['VERDURAS', 'VERDURAS', 'VERDURAS', 'VERDURAS']);
-  assert.equal(resolveDictionaryEntry('VERDURAS', family.id), null);
+  assert.equal(foods.entryId, '');
+  assert.deepEqual(foods.entries.map((entry) => entry.category), ['ALIMENTOS', 'ALIMENTOS', 'ALIMENTOS', 'ALIMENTOS', 'ALIMENTOS']);
+  assert.equal(resolveDictionaryEntry('ALIMENTOS', family.id), null);
 });
 
 test('capture category changes reset the sign and cannot resolve an ID from the previous category', () => {
   const father = STARTER_CATALOG.find((entry) => entry.category === 'FAMILIA' && entry.displayLabel === 'Papá');
-  const vegetables = changeDictionaryCategory('VERDURAS');
+  const foods = changeDictionaryCategory('ALIMENTOS');
 
   assert.ok(father);
-  assert.equal(vegetables.category, 'VERDURAS');
-  assert.equal(vegetables.entryId, '');
-  assert.equal(resolveDictionaryEntry(vegetables.category, father.id), null);
-  assert.ok(vegetables.entries.every((entry) => entry.category === vegetables.category));
+  assert.equal(foods.category, 'ALIMENTOS');
+  assert.equal(foods.entryId, '');
+  assert.equal(resolveDictionaryEntry(foods.category, father.id), null);
+  assert.ok(foods.entries.every((entry) => entry.category === foods.category));
 });
 
-test('dictionary selection resolves exact category and ID, including Papá and Papa', () => {
+test('dictionary selection resolves Papá uniquely and does not include the removed Papa vegetable', () => {
   const father = STARTER_CATALOG.find((entry) => entry.category === 'FAMILIA' && entry.displayLabel === 'Papá');
-  const potato = STARTER_CATALOG.find((entry) => entry.category === 'VERDURAS' && entry.displayLabel === 'Papa');
 
   assert.equal(resolveDictionaryEntry('FAMILIA', father.id), father);
-  assert.equal(resolveDictionaryEntry('VERDURAS', potato.id), potato);
-  assert.notEqual(father.id, potato.id);
+  assert.equal(STARTER_CATALOG.some((entry) => entry.displayLabel === 'Papa'), false);
 });
 
 test('selector entries preserve the catalog no-video state', () => {

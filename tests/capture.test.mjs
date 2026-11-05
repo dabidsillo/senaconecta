@@ -189,7 +189,7 @@ test('freezeResolvedLabel preserves catalog metadata and keeps stopping availabl
     catalogId: father.id,
     catalogLabel: father.displayLabel
   }));
-  const changedSelection = resolveDictionaryEntry('VERDURAS', father.id);
+  const changedSelection = resolveDictionaryEntry('ALIMENTOS', father.id);
   const metadata = buildCaptureMetadata({
     catalogVersion: CATALOG_VERSION,
     resolvedLabel: frozen
