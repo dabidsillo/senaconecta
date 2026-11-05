@@ -4,7 +4,7 @@ This work-unit snapshot runs the mobile-first Spanish dictionary shell, beginner
 
 The shared catalog contains 112 user-provided words and phrases across 15 categories. They are textual vocabulary labels, not validated Bolivian Sign Language claims. Camera capture does **not** translate signs, recognize movement, upload files, create accounts, use analytics, or store browser-persistent data.
 
-**Student guide (no programming required): [docs/guia-para-estudiantes.md](docs/guia-para-estudiantes.md).** Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). Defense guide: [docs/guia-de-defensa.md](docs/guia-de-defensa.md).
+**Student guide (no programming required): [docs/guia-para-estudiantes.md](docs/guia-para-estudiantes.md).** **New: learn the real page block by block in Spanish: [docs/codigo-html-paso-a-paso.md](docs/codigo-html-paso-a-paso.md).** Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). Defense guide: [docs/guia-de-defensa.md](docs/guia-de-defensa.md).
 
 ## Run locally
 
