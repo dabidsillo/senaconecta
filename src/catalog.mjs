@@ -1,67 +1,22 @@
-export const CATALOG_VERSION = 'starter-placeholder-v1';
+export const CATALOG_VERSION = 'final-vocabulary-v2';
 
-export const STARTER_CATALOG = Object.freeze([
-  Object.freeze({
-    id: 'greeting-hello',
-    label: 'hola',
-    displayLabel: 'Hola',
-    category: 'Saludos',
-    aliases: Object.freeze([]),
-    description: 'Etiqueta de vocabulario inicial pendiente de validación por creadoras LSB.',
-    videoPath: null,
-    validationStatus: 'placeholder'
-  }),
-  Object.freeze({
-    id: 'greeting-thanks',
-    label: 'gracias',
-    displayLabel: 'Gracias',
-    category: 'Saludos',
-    aliases: Object.freeze([]),
-    description: 'Entrada ilustrativa para probar búsqueda textual; no representa una seña validada.',
-    videoPath: null,
-    validationStatus: 'placeholder'
-  }),
-  Object.freeze({
-    id: 'people-student',
-    label: 'estudiante',
-    displayLabel: 'Estudiante',
-    category: 'Escuela',
-    aliases: Object.freeze([]),
-    description: 'Marcador de catálogo para organizar futuras grabaciones aprobadas.',
-    videoPath: null,
-    validationStatus: 'placeholder'
-  }),
-  Object.freeze({
-    id: 'school-book',
-    label: 'libro',
-    displayLabel: 'Libro',
-    category: 'Escuela',
-    aliases: Object.freeze([]),
-    description: 'Vocabulario escolar de muestra sin video disponible.',
-    videoPath: null,
-    validationStatus: 'placeholder'
-  }),
-  Object.freeze({
-    id: 'daily-water',
-    label: 'agua',
-    displayLabel: 'Agua',
-    category: 'Vida diaria',
-    aliases: Object.freeze([]),
-    description: 'Etiqueta cotidiana para demostrar categorías del diccionario.',
-    videoPath: null,
-    validationStatus: 'placeholder'
-  }),
-  Object.freeze({
-    id: 'daily-family',
-    label: 'familia',
-    displayLabel: 'Familia',
-    category: 'Vida diaria',
-    aliases: Object.freeze([]),
-    description: 'Entrada pendiente de revisión cultural y lingüística.',
-    videoPath: null,
-    validationStatus: 'placeholder'
-  })
-]);
+const VOCABULARY_BY_CATEGORY = Object.freeze({
+  SALUDOS: ['Hola', 'Chau', 'Buenos días', 'Buenas tardes', 'Buenas noches', 'Gracias', 'Por favor', '¿Cómo estás?', 'Estoy bien', 'Mal', 'Más o menos', 'Sí', 'No', 'Lo siento', 'Te amo'],
+  FAMILIA: ['Papá', 'Mamá', 'Bebé', 'Abuelo', 'Abuela', 'Hijo', 'Hija', 'Hermano', 'Hermana'],
+  ALIMENTOS: ['Pan', 'Leche', 'Carne', 'Fideo', 'Queso', 'Arroz', 'Sal', 'Aceite', 'Café', 'Azúcar', 'Té'],
+  LUGARES: ['Casa', 'Cuarto', 'Baño', 'Escuela', 'Hospital', 'Iglesia', 'Farmacia', 'Mercado'],
+  COLORES: ['Rojo', 'Amarilla', 'Azul', 'Verde'],
+  ANIMALES: ['Perro', 'Gato', 'Vaca', 'Cóndor', 'Gallina'],
+  'DEPARTAMENTOS DE BOLIVIA': ['Santa Cruz', 'La Paz', 'Cochabamba', 'Oruro', 'Tarija', 'Beni', 'Chuquisaca', 'Potosí', 'Pando'],
+  NATURALEZA: ['Frío', 'Calor', 'Sol', 'Lluvia'],
+  'MEDIOS DE TRANSPORTE': ['Auto', 'Flota', 'Micro', 'Trufi', 'Motocicleta'],
+  VERDURAS: ['Tomate', 'Cebolla', 'Zanahoria', 'Papa'],
+  FRUTAS: ['Manzana', 'Naranja', 'Uva', 'Plátano', 'Guineo', 'Piña'],
+  VERBOS: ['Cocinar', 'Comprar', 'Vender', 'Aprender', 'Comer', 'Dibujar', 'Dormir', 'Ayudar'],
+  PRONOMBRES: ['Yo', 'Tú', 'Nosotros', 'Él', 'Ella', 'Nuestro'],
+  NÚMEROS: ['Cero', 'Uno', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'],
+  'DÍAS DE LA SEMANA': ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+});
 
 const WORD_PATTERN = /[\p{L}\p{N}]+/gu;
 
@@ -76,6 +31,29 @@ export function normalizeText(value) {
 export function tokenizeText(value) {
   return normalizeText(value).match(WORD_PATTERN) ?? [];
 }
+
+function stableId(category, displayLabel) {
+  return `${tokenizeText(category).join('-')}-${tokenizeText(displayLabel).join('-')}`;
+}
+
+function createEntry(category, displayLabel) {
+  return Object.freeze({
+    id: stableId(category, displayLabel),
+    label: normalizeText(displayLabel),
+    displayLabel,
+    category,
+    aliases: Object.freeze([]),
+    description: 'Vocabulario provisto por usuarios; seña y video pendientes de validación.',
+    videoPath: null,
+    validationStatus: 'placeholder'
+  });
+}
+
+export const STARTER_CATALOG = Object.freeze(
+  Object.entries(VOCABULARY_BY_CATEGORY).flatMap(([category, labels]) =>
+    labels.map((displayLabel) => createEntry(category, displayLabel))
+  )
+);
 
 export function getCategories(catalog = STARTER_CATALOG) {
   return [...new Set(catalog.map((entry) => entry.category))].sort((a, b) => a.localeCompare(b, 'es'));
@@ -92,32 +70,66 @@ export function createLexicon(catalog = STARTER_CATALOG) {
   const lexicon = new Map();
 
   for (const entry of catalog) {
-    const terms = [entry.label, ...(entry.aliases ?? [])];
-
-    for (const term of terms) {
+    for (const term of [entry.label, ...(entry.aliases ?? [])]) {
       const normalizedTerm = normalizeText(term);
-      if (!normalizedTerm || lexicon.has(normalizedTerm)) {
-        continue;
+      if (normalizedTerm && !lexicon.has(normalizedTerm)) {
+        lexicon.set(normalizedTerm, entry);
       }
-      lexicon.set(normalizedTerm, entry);
     }
   }
 
   return lexicon;
 }
 
+function createPhraseLexicon(catalog) {
+  const phrases = new Map();
+  let longestPhraseLength = 0;
+
+  for (const entry of catalog) {
+    for (const term of [entry.label, ...(entry.aliases ?? [])]) {
+      const phraseTokens = tokenizeText(term);
+      if (phraseTokens.length === 0) {
+        continue;
+      }
+
+      const phrase = phraseTokens.join(' ');
+      const matches = phrases.get(phrase) ?? [];
+      matches.push(entry);
+      phrases.set(phrase, matches);
+      longestPhraseLength = Math.max(longestPhraseLength, phraseTokens.length);
+    }
+  }
+
+  return { phrases, longestPhraseLength };
+}
+
 export function lookupText(input, catalog = STARTER_CATALOG) {
-  const lexicon = createLexicon(catalog);
   const tokens = tokenizeText(input);
+  const { phrases, longestPhraseLength } = createPhraseLexicon(catalog);
   const recognized = [];
   const unknown = [];
 
-  for (const token of tokens) {
-    const entry = lexicon.get(token);
-    if (entry) {
-      recognized.push({ token, entry });
+  for (let index = 0; index < tokens.length;) {
+    let match = null;
+    const maximumLength = Math.min(longestPhraseLength, tokens.length - index);
+
+    for (let length = maximumLength; length > 0; length -= 1) {
+      const token = tokens.slice(index, index + length).join(' ');
+      const entries = phrases.get(token);
+      if (entries) {
+        match = { token, entries, length };
+        break;
+      }
+    }
+
+    if (match) {
+      for (const entry of match.entries) {
+        recognized.push({ token: match.token, entry });
+      }
+      index += match.length;
     } else {
-      unknown.push(token);
+      unknown.push(tokens[index]);
+      index += 1;
     }
   }
 

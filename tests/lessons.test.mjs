@@ -8,11 +8,30 @@ import {
   getPracticePrompt
 } from '../src/lessons.mjs';
 
-test('buildBeginnerLessons creates category lessons from the shared starter catalog', () => {
+const EXPECTED_CATEGORIES = [
+  'SALUDOS',
+  'FAMILIA',
+  'ALIMENTOS',
+  'LUGARES',
+  'COLORES',
+  'ANIMALES',
+  'DEPARTAMENTOS DE BOLIVIA',
+  'NATURALEZA',
+  'MEDIOS DE TRANSPORTE',
+  'VERDURAS',
+  'FRUTAS',
+  'VERBOS',
+  'PRONOMBRES',
+  'NÚMEROS',
+  'DÍAS DE LA SEMANA'
+].sort((a, b) => a.localeCompare(b, 'es'));
+
+test('buildBeginnerLessons creates all 15 category lessons from the shared final vocabulary', () => {
   const lessons = buildBeginnerLessons(STARTER_CATALOG);
 
-  assert.deepEqual(lessons.map((lesson) => lesson.category), ['Escuela', 'Saludos', 'Vida diaria']);
-  assert.equal(lessons.reduce((count, lesson) => count + lesson.entries.length, 0), STARTER_CATALOG.length);
+  assert.deepEqual(lessons.map((lesson) => lesson.category), EXPECTED_CATEGORIES);
+  assert.equal(lessons.length, 15);
+  assert.equal(lessons.reduce((count, lesson) => count + lesson.entries.length, 0), 112);
   assert.ok(lessons.every((lesson, index) => lesson.position === index + 1));
   assert.ok(lessons.every((lesson) => lesson.entries.every((entry) => entry.validationStatus === 'placeholder')));
 });

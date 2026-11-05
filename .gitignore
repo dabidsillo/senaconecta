@@ -1,5 +1,6 @@
 # Local Pi runtime state
 .atl/
+.codegraph/
 
 # Private creator media kept outside version control.
 /videos/
@@ -7,4 +8,5 @@
 # User-owned thesis documentation and its private work log.
 /docs/documentacion.docx
 /docs/cambios-documentacion.md
+/docs/DICCIONARIO LSB.docx
 /odd/tasks/tinku-documentation-alignment.md
