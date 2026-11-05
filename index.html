@@ -70,20 +70,21 @@
               type="text"
               inputmode="text"
               maxlength="160"
-              placeholder="Ej.: Hola estudiante y agua"
+              placeholder="Ej.: Hola, ¿cómo estás?"
               aria-describedby="lookup-help"
             >
             <button type="submit">Buscar</button>
           </div>
           <p id="lookup-help" class="help-text">
-            La búsqueda ignora mayúsculas y acentos, separa el texto por palabras y no guarda datos.
+            La búsqueda ignora mayúsculas y acentos, reconoce frases del catálogo y no guarda datos.
+            El último ejemplo incluye «amigo», que todavía no está en el diccionario.
           </p>
         </form>
 
         <div class="examples" aria-label="Ejemplos de búsqueda">
-          <button type="button" data-example="Hola estudiante">Hola estudiante</button>
-          <button type="button" data-example="Gracias por el agua">Gracias por el agua</button>
-          <button type="button" data-example="Familia y libro">Familia y libro</button>
+          <button type="button" data-example="Hola, ¿cómo estás?">Hola, ¿cómo estás?</button>
+          <button type="button" data-example="Gracias, mamá">Gracias, mamá</button>
+          <button type="button" data-example="Buenos días, amigo">Buenos días, amigo</button>
         </div>
 
         <section class="results" aria-live="polite" aria-atomic="false">
