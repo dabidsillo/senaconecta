@@ -11,8 +11,8 @@ Help school students with no programming background explain the delivered Tinku 
 - Engram mirror: `odd/tinku-student-explanation-guide/tasks`.
 
 ## Tasks
-- [ ] **STUDENT-1 — Write and link accessible student guide.** Create the guide and link it from README; compare every code snippet with source and check plain-language oral explanations and limits. Progress: in progress. Commit: pending.
-- [ ] **STUDENT-2 — Verify pedagogical and technical accuracy.** Independent read-only check of examples, wording, scope, links and protected assets; run applicable diff/tests, record skipped real-student reading test and record result. Progress: pending. Commit: pending if tracked record changes.
+- [x] **STUDENT-1 — Write and link accessible student guide.** Published a stand-alone Spanish school guide with an approximately one-minute script, plain HTML/CSS/JS explanation and literal snippets, three feature demos, honest limitations and Q&A; README links it. Independent verifier confirmed literal snippets/link, 112/15 vocabulary, capture/reload behavior and limits; shortened the time claim after it identified a ~112-word script could not fill two minutes. 44/44 Node tests and diff checks passed. Native low-risk docs review approved/acknowledged. Progress: complete. Commit: `de052cb` (`docs: teach students to explain Tinku simply`).
+- [x] **STUDENT-2 — Verify pedagogical and technical accuracy.** Independent verifier confirmed the four literal snippets match index/CSS/app; ~112-word script aligns with the approximately one-minute heading, README link works, recording/storage/Windows/GitHub boundaries are accurate, and private documents/videos remain untracked. `node --test` passed 44/44, `git show --check de052cb` and `git diff --check` passed. A real-student reading/usability test was **not performed**; adjust the guide after their feedback. Progress: complete for source/automated evidence; learner trial pending. Commit: verification record committed locally (see Git history).
 
 ## Next step
-Draft the public guide, then verify; local commits only.
+Ask a student to explain one HTML/CSS/JS chain and show each feature without reading the guide verbatim; collect confusing words for a later revision. No push or PR without a separate user request.
