@@ -1,118 +1,95 @@
 # Guía breve para explicar Tinku
 
-Esta guía te ayuda a mostrar Tinku aunque no programes. No tenés que memorizar código ni escribirlo: señalá los archivos y explicá qué parte hace cada trabajo.
+Esta guía te ayuda a mostrar Tinku aunque no programes. No tenés que memorizar código ni escribirlo: explicá lo que la página hace y también sus límites.
 
-## Guion breve para decir en voz alta (alrededor de un minuto)
+## Guion breve para decir en voz alta
 
-> Tinku es un prototipo para explorar vocabulario en texto, practicar por categorías y, si quiero, grabar un clip corto con cámara. El diccionario tiene 112 palabras o frases en 15 categorías. Por ejemplo, distingue **Papá** de Familia y **Papa** de Verduras: son entradas diferentes. Las lecciones se recorren horizontalmente y la práctica vuelve a empezar si recargo la página. La cámara es opcional: puede grabar hasta 15 segundos y después yo descargo un video y su archivo JSON con datos del clip. Tinku no reconoce señas, no traduce, no sube archivos y no confirma que los videos sean señas LSB validadas. Es una base para practicar, organizar muestras y revisarlas con personas.
+> Tinku es un prototipo para explorar vocabulario en texto, practicar por categorías y, si quiero, grabar un clip corto con cámara. Tiene 45 etiquetas en 9 categorías. La búsqueda y la práctica son temporales: la práctica vuelve a empezar si recargo. Si grabo un clip, puedo elegir **Guardar seña** para conservarlo en este navegador; después lo puedo reproducir o eliminar. Tinku no reconoce señas, no traduce, no sube archivos y no confirma que un clip sea una seña LSB validada.
+
+## El catálogo que se puede mostrar
+
+| Categoría | Etiquetas exactas |
+| --- | --- |
+| ALIMENTOS | Arroz, Café, Fideo, Leche, Pan |
+| ANIMALES | Cóndor, Gallina, Gato, Perro, Vaca |
+| COLORES | Amarillo, Azul, Rojo, Verde |
+| DEPARTAMENTOS | Beni, La Paz, Oruro, Potosí, Santa Cruz |
+| DÍAS DE LA SEMANA | Jueves, Lunes, Martes, Miércoles, Viernes |
+| FAMILIA | Bebé, Hija, Hijo, Mamá, Papá |
+| FRUTAS | Guineo, Manzana, Naranja, Piña, Plátano |
+| LUGARES | Baño, Casa, Escuela, Hospital, Mercado |
+| SALUDOS | Chau, Gracias, Hola, Lo siento, Por favor, Te amo |
 
 ## Qué hace y qué no hace
 
 | Sí hace | No hace |
 | --- | --- |
 | Busca etiquetas de texto y permite elegir categoría y palabra. | No reconoce movimientos ni traduce señas a texto. |
-| Organiza 112 etiquetas en 15 categorías. | No prueba que una etiqueta sea una seña LSB validada. |
-| Propone práctica textual por categoría. | No guarda el avance al recargar o cerrar la página. |
-| Graba, si das permiso, clips de hasta 15 segundos. | No sube clips, no crea cuentas ni los guarda permanentemente. |
-| Ofrece descargar un video y su JSON. | No incluye videos LSB validados en el sitio público. |
+| Organiza 45 etiquetas en 9 categorías. | No prueba que una etiqueta sea una seña LSB validada. |
+| Propone práctica textual por categoría. | No guarda el avance de práctica al recargar o cerrar la página. |
+| Graba, si das permiso, clips de hasta 15 segundos. | No descarga video ni JSON, no sube clips y no crea cuentas. |
+| Guarda un clip solo al pulsar **Guardar seña**. | No lo agrega automáticamente al catálogo ni lo comparte. |
+| Permite reproducir o eliminar los clips guardados. | No incluye ni enlaza videos de señas de personas creadoras. |
 
 ## La idea del código: partes, aspecto y acciones
 
 Pensalo como una maqueta escolar:
 
-- **HTML = partes.** `index.html` nombra y ordena lo que aparece: títulos, botones, formularios y secciones.
+- **HTML = partes.** `index.html` nombra y ordena títulos, botones, formularios y secciones.
 - **CSS = aspecto.** `styles.css` decide colores, tamaños, espacios y cómo se acomodan las partes.
-- **JavaScript (JS) = acciones.** `src/app.js` responde cuando alguien busca, hace clic, practica o graba.
+- **JavaScript (JS) = acciones.** `src/app.js` responde cuando alguien busca, practica, graba, guarda, reproduce o elimina.
 
-No hace falta aprender símbolos. Para explicarlos, apuntá al archivo correcto.
-
-### Cadena concreta: de una página a una acción
-
-1. En `index.html`, estas líneas conectan la página con el aspecto y las acciones:
-
-```html
-    <link rel="stylesheet" href="styles.css">
-    <script type="module" src="src/app.js"></script>
-```
-
-2. En `styles.css`, este comienzo define que la lista de lecciones se pueda recorrer hacia los costados:
-
-```css
-.lesson-list {
-  display: grid;
-  min-inline-size: 0;
-  max-inline-size: 100%;
-  grid-auto-columns: clamp(15rem, 72vw, 20rem);
-  grid-auto-flow: column;
-  gap: 0.9rem;
-  overflow-x: auto;
-```
-
-3. En `src/app.js`, JavaScript encuentra la lista de lecciones de la página:
-
-```js
-const lessonList = document.querySelector('#lesson-list');
-```
-
-4. También escucha un clic en el botón para ir a la siguiente lección:
-
-```js
-nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
-```
-
-Estos ejemplos son literales del proyecto. Cada tarjeta mide como mínimo `15rem`, apunta a `72vw` según el ancho de la ventana y no supera `20rem`; la lista se mantiene dentro de su contenedor. La última llave de CSS está más abajo en el archivo: se muestra solo el comienzo para que sea corto.
-
-Para estudiar el código por partes, seguí este orden (podés detenerte después de cualquiera):
+Para estudiar el código por partes, seguí este orden:
 
 1. [HTML paso a paso](codigo-html-paso-a-paso.md): qué elementos forman la página.
 2. [CSS paso a paso](codigo-css-paso-a-paso.md): colores, foco, galería y pantallas anchas.
 3. [JavaScript: catálogo, diccionario y lecciones](codigo-js-catalogo-y-lecciones.md): búsqueda y práctica.
 4. [JavaScript: cámara y descargas](codigo-js-camara-y-descargas.md): permisos, grabación y archivos locales.
 
-### Tres palabras que podés reconocer
-
-- `#lesson-list` significa “el elemento con ese identificador único”; en HTML aparece como `id="lesson-list"`.
-- `.lesson-list` significa “los elementos de esa clase”; CSS la usa para darles aspecto y comportamiento visual.
-- Una `function` es una receta con nombre: JavaScript la guarda para usarla cuando hace falta. Un `click` es el clic de una persona; `addEventListener('click', ...)` indica qué receta se ejecuta después.
+El último enlace conserva su nombre para no romper la ruta; en la interfaz actual el flujo es guardar localmente, no descargar archivos.
 
 ## Cómo mostrar cada parte
 
 ### 1. Diccionario
 
-Elegí una categoría y luego una palabra o frase. Mostrá que **Familia → Papá** y **Verduras → Papa** no son lo mismo: el selector usa la categoría y el identificador propio de cada entrada. La búsqueda libre ignora la tilde y puede encontrar ambas; no mira ni interpreta una seña hecha con las manos.
+Elegí una categoría y una etiqueta, por ejemplo **Familia → Papá**. También podés usar los ejemplos sugeridos `Hola, mamá`, `Lo siento, papá` y `Por favor, amigo`; `amigo` muestra cómo se ve una palabra que no está en el catálogo. La búsqueda no interpreta una seña hecha con las manos ni guarda lo que escribís.
 
-Si aparece “Video no disponible”, explicá la verdad: la etiqueta existe en el catálogo, pero no hay un video cargado y revisado para mostrar. No inventes una seña ni digas que un resultado fue validado por LSB.
+Si aparece “Video no disponible”, explicá la verdad: todas las entradas actuales tienen `videoPath: null`. No hay video vinculado, publicado ni revisado para mostrar. No inventes una seña ni digas que un resultado fue validado por LSB.
 
 ### 2. Lecciones
 
-Deslizá horizontalmente las tarjetas o usá **Anterior** y **Siguiente**. Elegí una categoría y respondé la práctica textual. Si recargás la página, el avance se reinicia porque vive solamente en la memoria de esa pestaña. Eso es intencional: no hay cuenta ni guardado permanente.
+Deslizá horizontalmente las tarjetas o usá **Anterior** y **Siguiente**. Elegí una categoría y respondé la práctica textual. Si recargás la página, el avance se reinicia porque vive solamente en la memoria de esa pestaña. Eso es intencional: no hay cuenta ni perfil.
 
-### 3. Cámara opcional
+### 3. Cámara y guardado local
 
-Usala solo si querés mostrar la captura. Elegí una categoría y una etiqueta, o escribí una etiqueta propia; después permití la cámara. El clip dura como máximo 15 segundos. Al terminar, aparecen dos descargas: **video** y **metadata JSON**. Bajá ambos archivos y revisalos con una persona antes de usarlos; el JSON describe datos del clip, no valida su significado.
+Usala solo si querés mostrar la captura. Elegí, por ejemplo, `Familia` y `Papá`, o escribí una etiqueta propia; después permití la cámara. El clip dura como máximo 15 segundos. Cuando termina, primero aparece una vista previa temporal. Elegí **Guardar seña** solo si querés conservarlo.
+
+Al guardar, el clip y su etiqueta quedan en IndexedDB del mismo navegador y origen. Recargar no lo borra normalmente: aparece en la lista para **Reproducir** o **Eliminar**. No se sube, no se descarga como video o JSON y no pasa al catálogo.
+
+No es una copia portable: otro dominio, navegador, perfil, computadora o dispositivo no la recibe. El navegador puede rechazar el guardado por falta de espacio o borrar datos por sus reglas de privacidad, al limpiar datos del sitio o por evicción de almacenamiento. Pedí consentimiento antes de grabar a otra persona, especialmente si es menor de edad.
 
 ## Preparación local y lista de demostración
 
 1. En la carpeta del proyecto, ejecutá `python3 -m http.server 8000 --bind 127.0.0.1`.
 2. Abrí `http://localhost:8000` en un navegador moderno.
-3. Probá Diccionario con `Papá` y `Papa` en sus categorías distintas.
+3. Probá Diccionario con `Papá` y los ejemplos sugeridos `Hola, mamá`, `Lo siento, papá` y `Por favor, amigo`.
 4. Desplazate por Lecciones, respondé una práctica y recargá para observar el reinicio.
-5. Solo si hay tiempo y permiso, probá Cámara; verificá que se ofrezcan las dos descargas y explicá que requiere revisión humana.
+5. Solo si hay tiempo y permiso, probá Cámara: grabá menos de 15 segundos, usá **Guardar seña**, recargá y verificá que podés reproducir o eliminar el clip.
 
-Si usás Windows, podés probar `iniciar-tinku.bat` con Python 3 instalado; todavía no fue probado en una computadora Windows. GitHub contiene el código, pero no publica automáticamente una página web ni incluye los videos privados.
+Si usás Windows, podés probar `iniciar-tinku.bat` con Python 3 instalado; todavía no fue probado en una computadora Windows. GitHub puede alojar código, pero no publica automáticamente una página web, ni vuelve públicos videos privados, ni transporta los clips guardados en tu navegador.
 
 ## Preguntas que pueden hacerte
 
-**¿Tinku traduce señas?**  No. El prototipo busca etiquetas de texto, practica con texto y puede grabar clips etiquetados.
+**¿Tinku traduce señas?** No. El prototipo busca etiquetas de texto, practica con texto y puede grabar clips etiquetados.
 
-**¿La cámara reconoce si hice bien una seña?**  No. Solo graba el clip que vos decidís capturar; una etiqueta no es una evaluación automática.
+**¿La cámara reconoce si hice bien una seña?** No. Solo graba el clip que vos decidís capturar; una etiqueta no es una evaluación automática.
 
-**¿Los videos ya son LSB validados?**  No. El catálogo actual puede mostrar que falta video; cualquier clip debe ser revisado por personas calificadas antes de presentarlo como válido.
+**¿Los videos ya son LSB validados?** No. Las entradas actuales tienen `videoPath: null`; no están vinculadas a videos públicos o revisados.
 
-**¿Qué ocurre con mi grabación?**  Queda temporalmente en el navegador hasta que la reemplazás, recargás o cerrás la página. Descargarla no borra la vista previa. Nada se sube automáticamente. Para conservarla, descargá el video y el JSON.
+**¿Qué ocurre con mi grabación?** Antes de guardar, es una vista previa temporal. Si elegís **Guardar seña**, queda en IndexedDB de este navegador y origen hasta que la eliminás o el navegador borra su almacenamiento. Nada se sube automáticamente.
 
-**¿Por qué se borra la práctica al recargar?**  Porque el avance se mantiene solo en la memoria de la pestaña. Así el prototipo no crea perfiles ni guarda progreso permanente.
+**¿Por qué se borra la práctica al recargar?** Porque el avance se mantiene solo en la memoria de la pestaña. Es distinto de los clips que elegís guardar.
 
 ## Para cerrar tu explicación
 
-Decí qué viste, no lo que imaginás: “Mostré una etiqueta de texto, una práctica que se reinicia y una captura opcional descargable”. Si alguien pregunta por una seña o por la calidad de un video, la respuesta responsable es que hace falta revisión humana.
+Decí qué viste, no lo que imaginás: “Mostré etiquetas de texto, una práctica que se reinicia y una captura opcional que se guarda localmente solo con un clic”. Si alguien pregunta por una seña o por la calidad de un clip, la respuesta responsable es que hace falta revisión humana.

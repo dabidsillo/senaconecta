@@ -1,18 +1,36 @@
-# Tinku MVP — dictionary, lessons, and capture slice
+# Tinku MVP — dictionary, lessons, and local capture
 
-This work-unit snapshot runs the mobile-first Spanish dictionary shell, beginner category lessons, and labeled camera capture for future training/evaluation samples. It supports an exact category → word selector alongside free-text lookup, safe result rendering, ordered playback controls for entries that later declare videos, clear missing-video states, text-only practice that resets when the page reloads, and explicit video + JSON downloads for each recorded clip.
+Tinku is a mobile-first Spanish prototype for exploring textual vocabulary, practicing by category, and optionally recording a short labeled clip. The shared catalog has **45 text labels in 9 categories**. They are supplied vocabulary labels, not validated Bolivian Sign Language claims.
 
-The shared catalog contains 112 user-provided words and phrases across 15 categories. They are textual vocabulary labels, not validated Bolivian Sign Language claims. Camera capture does **not** translate signs, recognize movement, upload files, create accounts, use analytics, or store browser-persistent data.
+The dictionary search and practice are temporary: search does not store queries, and practice restarts after a reload. A recorded clip is different: after recording, use **Guardar seña** explicitly to save the clip and its frozen label in IndexedDB for this browser origin. Saved clips remain available after reloads in that same browser until you delete them or the browser evicts its storage. You can play or delete each saved clip from the local list.
 
-**Student guide (no programming required): [docs/guia-para-estudiantes.md](docs/guia-para-estudiantes.md).** **New: learn the real page block by block in Spanish: [docs/codigo-html-paso-a-paso.md](docs/codigo-html-paso-a-paso.md).** Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). Defense guide: [docs/guia-de-defensa.md](docs/guia-de-defensa.md).
+No video or JSON files are downloaded. Tinku does not create accounts, use a backend, upload clips, or automatically promote a saved clip into the catalog. It does not translate signs, recognize movement, or validate a sign.
+
+**Student guide (no programming required): [docs/guia-para-estudiantes.md](docs/guia-para-estudiantes.md).** **Learn the page block by block in Spanish: [docs/codigo-html-paso-a-paso.md](docs/codigo-html-paso-a-paso.md).** Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). Defense guide: [docs/guia-de-defensa.md](docs/guia-de-defensa.md).
+
+## Catalog: exact labels
+
+| Category | Labels |
+| --- | --- |
+| ALIMENTOS | Arroz, Café, Fideo, Leche, Pan |
+| ANIMALES | Cóndor, Gallina, Gato, Perro, Vaca |
+| COLORES | Amarillo, Azul, Rojo, Verde |
+| DEPARTAMENTOS | Beni, La Paz, Oruro, Potosí, Santa Cruz |
+| DÍAS DE LA SEMANA | Jueves, Lunes, Martes, Miércoles, Viernes |
+| FAMILIA | Bebé, Hija, Hijo, Mamá, Papá |
+| FRUTAS | Guineo, Manzana, Naranja, Piña, Plátano |
+| LUGARES | Baño, Casa, Escuela, Hospital, Mercado |
+| SALUDOS | Chau, Gracias, Hola, Lo siento, Por favor, Te amo |
+
+Every current entry in `src/catalog.mjs` has `videoPath: null` and `validationStatus: 'placeholder'`. The UI therefore shows an unavailable-video state; it does not link to or publish creator sign videos. Do not claim that this repository hosts videos or that a site launch has been verified.
 
 ## Run locally
 
 1. From this directory run `python3 -m http.server 8000 --bind 127.0.0.1`.
 2. Open `http://localhost:8000` in a modern browser.
-3. In “Diccionario”, choose a category and then a word for one exact catalog entry, or search free text such as `Buenos días`, `Santa Cruz`, or `Gracias misterio`.
-4. Open “Lecciones”, move horizontally through the 15 categories with touch/trackpad, the focusable gallery, or its Previous/Next buttons, then pick a category and answer the text-only practice prompts below the gallery.
-5. Open “Cámara”, choose a category such as `Familia` and then a sign or word such as `Papá`; or enter a custom label, which overrides the catalog and works without a category. Allow camera access only if you choose to record, then download both the video and metadata JSON before closing or refreshing the page.
+3. In **Diccionario**, choose a category and label, or use the suggested searches `Hola, mamá`, `Lo siento, papá`, and `Por favor, amigo`. The last one intentionally leaves `amigo` unmatched.
+4. In **Lecciones**, move through the 9 categories and answer text-only practice prompts. Reload to see that practice progress resets.
+5. In **Cámara**, choose for example `Familia` → `Papá`, or enter a custom label. Allow camera access only if you choose to record. A recording stops after at most 15 seconds; then select **Guardar seña** if you want to retain it locally.
 
 ### Windows (double-click)
 
@@ -21,34 +39,23 @@ The shared catalog contains 112 user-provided words and phrases across 15 catego
 3. The launcher opens `http://127.0.0.1:8000/` only after Python binds the local server to `127.0.0.1:8000`; it does not expose the site to the LAN. Leave the console open while using the site, and close it to stop serving.
 4. Allow camera access in your browser only if you choose to record. If Python is missing or port 8000 is busy, the console shows an error instead of opening the browser.
 
-The Windows launcher has not yet been tested on a Windows machine.
+The Windows launcher has not yet been tested on a Windows machine. Avoid `file://` because browser JavaScript modules and camera APIs may be blocked. Camera access generally requires `localhost` or HTTPS. Binding the local server to `127.0.0.1` keeps the repository off the LAN by default.
 
-Avoid `file://` because browser JavaScript modules and camera APIs may be blocked. Camera access generally requires `localhost` or HTTPS. Binding the local server to `127.0.0.1` keeps the repository off the LAN by default. Recording blobs live in memory until replaced or the page closes.
+## Local capture and privacy
+
+The capture tool records at most 15 seconds per clip. Select a catalog label or enter a custom one; the active label is frozen when recording starts. After the clip is ready, it is only a temporary preview until you explicitly choose **Guardar seña**.
+
+Saving stores the video Blob and metadata in IndexedDB, scoped to this browser and this origin (for example, `localhost:8000`). The saved-recordings list lets you play a clip locally or permanently delete it. Browser privacy settings, storage quota, private browsing, clearing site data, or browser storage eviction can prevent saving or remove saved clips. Clips are not portable to another domain, browser profile, browser, computer, or device.
+
+Get appropriate consent before recording anyone, especially minors. Do not project, share, or reuse a clip containing personal data without consent. A saved label is context for later review, not evidence that the movement is correct. Saving neither uploads a clip nor adds it to `src/catalog.mjs`.
 
 ## Catalog, videos, lessons, and capture
 
-The dictionary selector, free-text search, and lessons read the same shared `src/catalog.mjs` catalog: 112 words and phrases in 15 categories. The selector resolves the exact category plus entry ID, so `Papá` (FAMILIA) and `Papa` (VERDURAS) remain distinct. Free-text search is separate and can match phrases such as `Buenos días`.
+The dictionary selector, free-text search, and lessons all read `src/catalog.mjs`. Search is independent of exact category selection and can recognize catalog phrases such as `Lo siento` or `Santa Cruz`. Current labels are placeholders only: none has a linked or public video because every `videoPath` is `null`.
 
-Current entries intentionally have `videoPath: null`, so the UI shows “Video no disponible” instead of fabricating movement. A selected label or textual match is not evidence of a reviewed LSB sign or a published video.
+Lessons are generated from the shared categories. Practice state exists only in JavaScript memory for the current tab, so refreshing or closing the page loses it by design. Saved recordings are separate browser-local data and can remain after a reload.
 
-Beginner lessons are generated by `src/lessons.mjs` from categories with at least two catalog entries. The compact gallery scrolls horizontally one category card at a time with CSS snap; use touch/trackpad, focus the gallery with the keyboard, or use its Previous/Next buttons. The 15-category practice remains below the gallery. Practice progress is held only in JavaScript memory for the current tab; refreshing or closing the page loses it by design.
-
-The capture tool records at most 15 seconds per clip. Choose a category first, then one of its signs or words, so the exact category and ID stay linked; for example, `Familia` → `Papá` remains distinct from `Verduras` → `Papa`. A custom label is optional, works without a category, and overrides the catalog selection. The active label is frozen when recording starts, then exported in the metadata JSON alongside timing, size, MIME type, catalog version, and explicit `upload: none` / temporary storage fields. A label is training data context only; it is not proof of recognition accuracy.
-
-Private creator media belongs in the root `videos/` directory, which is ignored by Git for ordinary adds.
-
-To attach a validated local recording:
-
-1. Record from `http://localhost:8000`.
-2. Download both files to your Downloads folder.
-3. Review the clip and validate the sign before using it.
-4. Manually copy the reviewed clip into `videos/`; optionally copy its companion JSON there too.
-5. Update the tracked `src/catalog.mjs` `videoPath` for that entry to point at the local clip.
-6. Reload the page and test dictionary playback.
-
-Do not modify the catalog until a real reviewed clip exists. The ignore rule prevents ordinary `git add videos/...`, but not `git add -f` or other publishing paths. A GitHub-hosted site will not receive ignored clips and needs separate asset delivery.
-
-Only change validation wording after actual review by qualified LSB creators or collaborators.
+Private creator media belongs outside any public build; the root `videos/` directory is ignored by Git for ordinary adds. Git ignore rules do **not** prevent a web server pointed at the repository root from serving private files to anyone who can reach it. For any public deployment, publish only an explicit allowlist of public app files—not the repository root, private documents, or media. No catalog entry or validation wording should change until a real review by qualified LSB creators or collaborators has happened.
 
 ## Future slices
 
@@ -63,4 +70,4 @@ node --test
 node --check src/app.js src/dictionary-select.mjs
 ```
 
-A real browser walkthrough is still needed to observe responsive layout, camera permission, recording, playback, download, and native media error behavior.
+A real browser walkthrough is still needed to observe responsive layout, camera permission, the 15-second limit, local save/play/delete behavior, and browser storage behavior.

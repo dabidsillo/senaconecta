@@ -2,7 +2,7 @@
 
 Esta guía explica cómo está construido el MVP de Tinku, qué problema intenta resolver y qué decisiones técnicas tomó el proyecto. Está escrita para una estudiante o un estudiante que recién empieza con HTML, CSS y JavaScript.
 
-> Idea central: esta aplicación funciona en el navegador, sin servidor propio, sin cuentas y sin traducción automática de señas. Muestra 112 etiquetas textuales en 15 categorías, organiza lecciones y permite grabar clips etiquetados para revisión futura.
+> Idea central: esta aplicación funciona en el navegador, sin servidor propio, sin cuentas y sin traducción automática de señas. Muestra 45 etiquetas textuales en 9 categorías, organiza lecciones y permite grabar clips etiquetados para revisión futura.
 
 ## Ruta rápida para entender el proyecto
 
@@ -22,7 +22,7 @@ Tinku busca ser una base escolar simple para explorar vocabulario de Lengua de S
 - lecciones iniciales por categoría;
 - captura de videos etiquetados para análisis o entrenamiento futuro.
 
-El MVP no afirma que las entradas sean señas válidas. El catálogo actual reúne 112 palabras y frases provistas para 15 categorías, con estados `placeholder`. Por eso la interfaz muestra estados como “Video no disponible” cuando no hay una grabación revisada.
+El MVP no afirma que las entradas sean señas válidas. El catálogo actual reúne 45 palabras y frases provistas para 9 categorías, con estados `placeholder`. Por eso la interfaz muestra estados como “Video no disponible” cuando no hay una grabación revisada.
 
 ## Qué no hace este MVP
 
@@ -31,12 +31,12 @@ Este punto es importante para defender el proyecto con honestidad técnica:
 - No traduce señas automáticamente.
 - No reconoce movimientos con inteligencia artificial.
 - No valida que una etiqueta sea una seña correcta.
-- No tiene backend, login ni base de datos.
+- No tiene backend ni login; IndexedDB guarda clips solo después de que la persona lo pide.
 - No sube videos a internet.
 - No conserva progreso después de recargar la página.
 - No agrega videos privados al repositorio.
 
-La cámara solo graba clips que la persona usuaria etiqueta y descarga manualmente. Esa etiqueta es contexto para revisión futura, no una prueba de reconocimiento.
+La cámara solo graba clips etiquetados. La persona elige si guarda cada clip localmente con **Guardar seña**; la etiqueta es contexto para revisión futura, no una prueba de reconocimiento.
 
 ## Stack real del proyecto
 
@@ -45,7 +45,8 @@ La cámara solo graba clips que la persona usuaria etiqueta y descarga manualmen
 | Página | HTML en [index.html](../index.html) | Define secciones, formularios, botones y contenedores. |
 | Estilos | CSS en [styles.css](../styles.css) | Da diseño mobile-first, tarjetas, paneles y adaptación a pantallas grandes. |
 | Lógica del navegador | JavaScript modules en [src/](../src/) | Busca vocabulario, arma lecciones, maneja cámara y actualiza el DOM. |
-| Pruebas | Node test runner en [tests/](../tests/) | Verifica funciones puras sin abrir el navegador. |
+| Guardado local | IndexedDB en [src/capture-store.mjs](../src/capture-store.mjs) | Conserva solo clips guardados explícitamente en ese navegador y origen. |
+| Pruebas | Node test runner en [tests/](../tests/) | Verifica funciones puras y un almacén simulado sin abrir el navegador. |
 | Servidor local de desarrollo | `python3 -m http.server` | Sirve archivos estáticos desde la computadora. |
 
 El servidor de Python no es parte de la aplicación final. Solo permite abrir el proyecto como sitio local para que el navegador acepte módulos JavaScript y APIs como cámara en `localhost`.
@@ -78,10 +79,11 @@ http://localhost:8000
 | --- | --- |
 | [index.html](../index.html) | Esqueleto de la interfaz: navegación fija al desplazarse, diccionario, lecciones y cámara. El catálogo compartido vive en JavaScript; no tiene una tarjeta propia. |
 | [styles.css](../styles.css) | Diseño visual mobile-first y adaptación responsiva. |
-| [src/catalog.mjs](../src/catalog.mjs) | Catálogo compartido de 112 etiquetas en 15 categorías, normalización de texto, búsqueda y secuencia de videos. |
+| [src/catalog.mjs](../src/catalog.mjs) | Catálogo compartido de 45 etiquetas en 9 categorías, normalización de texto, búsqueda y secuencia de videos. |
 | [src/dictionary-select.mjs](../src/dictionary-select.mjs) | Lógica pura del selector categoría → palabra y resolución exacta por categoría e ID. |
 | [src/lessons.mjs](../src/lessons.mjs) | Lecciones por categoría y estado de práctica en memoria. |
-| [src/capture.mjs](../src/capture.mjs) | Soporte de cámara, etiquetas, MIME, nombres seguros, metadata y limpieza. |
+| [src/capture.mjs](../src/capture.mjs) | Soporte de cámara, etiquetas, MIME, metadata y limpieza. |
+| [src/capture-store.mjs](../src/capture-store.mjs) | Guardado IndexedDB local de video y metadata, lista, lectura y borrado. |
 | [src/app.js](../src/app.js) | Controlador del DOM: escucha eventos y renderiza resultados. |
 | [tests/](../tests/) | Pruebas de catálogo, lecciones y captura. |
 | [.gitignore](../.gitignore) | Evita versionar estado local de Pi y videos privados en `/videos/`. |
@@ -130,7 +132,7 @@ Algunas clases importantes:
 - `.card-grid`: grilla de resultados.
 - `.video-placeholder`: estado visible cuando no hay video.
 - `.lesson-list`: galería horizontal con tarjetas compactas, ajuste por CSS scroll snap y foco visible.
-- `.capture-panel`: zona de cámara y descargas.
+- `.capture-panel`: zona de cámara y guardado local.
 - `.metadata-preview`: vista del JSON generado.
 
 ## src/catalog.mjs: catálogo y búsqueda textual
@@ -140,7 +142,7 @@ Algunas clases importantes:
 El catálogo arranca con:
 
 ```js
-export const CATALOG_VERSION = 'final-vocabulary-v2';
+export const CATALOG_VERSION = 'final-vocabulary-v3';
 ```
 
 Cada entrada tiene datos como `id`, `label`, `displayLabel`, `category`, `description`, `videoPath` y `validationStatus`.
@@ -168,9 +170,9 @@ Flujo simple de búsqueda libre:
 texto escrito → normalizeText → tokenizeText → lookupText → resultados reconocidos/desconocidos
 ```
 
-Si la persona escribe “Buenos días misterio”, el sistema reconoce la frase completa que está en el catálogo y conserva `misterio` como texto no encontrado. Este camino puede devolver más de una coincidencia para una forma ambigua, por ejemplo `papa`.
+Si la persona escribe “Por favor, amigo”, el sistema reconoce la frase `Por favor` y conserva `amigo` como texto no encontrado. La búsqueda libre puede encontrar frases completas como `Lo siento` o `Santa Cruz`.
 
-Para elegir una sola entrada sin ambigüedad, el selector usa `src/dictionary-select.mjs`: primero carga las 15 categorías, luego habilita solo las palabras de la categoría elegida y finalmente resuelve la entrada por la pareja categoría + `id`. Así `Papá` de Familia y `Papa` de Verduras siguen siendo selecciones independientes.
+Para elegir una sola entrada sin ambigüedad, el selector usa `src/dictionary-select.mjs`: primero carga las 9 categorías, luego habilita solo las palabras de la categoría elegida y finalmente resuelve la entrada por la pareja categoría + `id`. Así `Papá` se resuelve como la entrada de Familia, sin inventar una entrada `Papa` en otra categoría.
 
 ## src/lessons.mjs: lecciones por categoría
 
@@ -190,7 +192,7 @@ El estado de práctica se crea con:
 createPracticeSession(lesson)
 ```
 
-Ese estado vive solo en memoria JavaScript. Si la página se recarga, el avance se pierde. Esto es intencional: el proyecto no usa almacenamiento persistente del navegador ni cuentas.
+Ese estado vive solo en memoria JavaScript. Si la página se recarga, el avance se pierde. Esto es intencional para la práctica: no se guarda su avance, aunque los clips elegidos con **Guardar seña** sí pueden persistir localmente.
 
 Funciones clave:
 
@@ -209,35 +211,35 @@ Funciones clave:
 - `chooseSupportedMimeType(mediaRecorder, options)`: elige un formato de video compatible.
 - `resolveCaptureLabel`: decide si usar etiqueta del catálogo o etiqueta personalizada.
 - `freezeResolvedLabel`: congela la etiqueta al comenzar la grabación.
-- `createSafeFileStem`: genera nombres de archivo seguros.
-- `buildCaptureMetadata`: crea el JSON que acompaña al video.
+- `buildSavedCaptureMetadata`: identifica los metadatos guardados explícitamente en IndexedDB.
+- `buildCaptureMetadata`: crea los metadatos descriptivos asociados al video.
 - `stopStreamTracks`: apaga tracks de cámara.
-- `createMetadataBlob`: prepara la metadata para descargar.
+- `createMetadataBlob`: función auxiliar para convertir metadata a Blob; la interfaz actual no ofrece descargas.
 
 Una decisión técnica importante es priorizar video sin audio cuando el stream no tiene audio. La aplicación pide cámara con `audio: false`, por eso `chooseSupportedMimeType` evita codecs de audio cuando no corresponden. Esto ayuda a compatibilidad entre navegadores.
 
 La metadata incluye campos como:
 
 ```js
-storage: 'browser-memory-until-explicit-download',
+storage: 'browser-memory-until-explicit-save',
 upload: 'none'
 ```
 
-Eso documenta que el archivo vive temporalmente en memoria del navegador y que no se sube a un servidor.
+Esto documenta que el clip todavía vive en memoria y no se sube. Tras pulsar **Guardar seña**, `buildSavedCaptureMetadata` cambia `storage` a `browser-indexeddb-after-explicit-save`; el video y los metadatos se guardan localmente en IndexedDB.
 
 ## Qué son memoria del navegador, Blob y objectURL
 
 Estos conceptos aparecen en la captura:
 
 - **Memoria del navegador**: espacio temporal que usa la pestaña mientras está abierta. No equivale a guardar en disco de forma permanente.
-- **Blob**: objeto que representa datos binarios o texto, por ejemplo un video grabado o un JSON.
-- **objectURL**: URL temporal creada con `URL.createObjectURL(blob)` para que un `<video>` o un enlace `<a>` puedan usar ese Blob.
+- **Blob**: objeto que representa datos binarios o texto, por ejemplo un video grabado.
+- **objectURL**: URL temporal creada con `URL.createObjectURL(blob)` para que un `<video>` pueda reproducir ese Blob.
 
-En este proyecto, `finishRecording` crea un Blob de video y otro Blob de metadata. Después crea URLs temporales para previsualizar y descargar. Más tarde `revokeCaptureUrls` libera esas URLs para no dejar memoria ocupada.
+En este proyecto, `finishRecording` crea un Blob de video y metadatos descriptivos. `showPendingPreview` crea una URL temporal para la vista previa; las funciones `revokePendingPreviewUrl` y `revokeSavedPreviewUrl` liberan las URLs al cambiar de vista o salir. IndexedDB conserva el Blob, **no** la objectURL.
 
 ## src/app.js: controlador de la interfaz
 
-[src/app.js](../src/app.js) conecta el HTML con las funciones de `catalog.mjs`, `lessons.mjs` y `capture.mjs`.
+[src/app.js](../src/app.js) conecta el HTML con las funciones de `catalog.mjs`, `lessons.mjs`, `capture.mjs` y `capture-store.mjs`.
 
 Al inicio selecciona elementos del DOM:
 
@@ -258,7 +260,7 @@ Responsabilidades de `app.js`:
 - mostrar lecciones y práctica;
 - pedir permiso de cámara;
 - iniciar y detener grabaciones;
-- crear enlaces de descarga para video y JSON;
+- guardar video y metadatos cuando la persona pulsa **Guardar seña**, y permitir reproducir o borrar clips locales;
 - limpiar cámara y URLs temporales al salir.
 
 Funciones útiles para estudiar:
@@ -270,7 +272,10 @@ Funciones útiles para estudiar:
 - `renderPractice()`: dibuja la pregunta actual.
 - `startCamera()`: pide permiso de cámara.
 - `startRecording()`: crea `MediaRecorder` y empieza a grabar.
-- `finishRecording(sessionId, recorder)`: prepara Blob, metadata y enlaces de descarga.
+- `finishRecording(sessionId, recorder)`: prepara Blob, metadata y vista previa temporal.
+- `savePendingRecording()`: guarda video y metadata solo tras un clic explícito.
+- `loadSavedRecordings()` y `selectSavedRecording(id)`: listan metadata y cargan el video solo cuando se elige reproducir.
+- `deleteSavedRecording(id)`: pide confirmación y borra ambas partes del almacén local.
 - `cleanupCapture()`: libera cámara, memoria y URLs temporales.
 
 ## Flujo end-to-end: búsqueda
@@ -301,7 +306,7 @@ Este flujo demuestra separación de responsabilidades: el catálogo decide qué 
 8. Al recargar la página, el estado desaparece.
 ```
 
-Las 15 categorías aparecen como tarjetas compactas en una galería horizontal. Se puede avanzar con touch o trackpad, enfocar la galería para recorrerla con teclado o usar los botones Anterior y Siguiente; cada botón avanza una tarjeta y se desactiva en el límite. La práctica elegida sigue debajo de la galería.
+Las 9 categorías aparecen como tarjetas compactas en una galería horizontal. Se puede avanzar con touch o trackpad, enfocar la galería para recorrerla con teclado o usar los botones Anterior y Siguiente; cada botón avanza una tarjeta y se desactiva en el límite. La práctica elegida sigue debajo de la galería.
 
 El punto educativo es que el progreso no se guarda en una base de datos. Solo vive en variables JavaScript como `practiceSession` mientras la pestaña está abierta.
 
@@ -317,11 +322,12 @@ El punto educativo es que el progreso no se guarda en una base de datos. Solo vi
 7. MediaRecorder graba un clip corto.
 8. finishRecording crea un Blob de video.
 9. buildCaptureMetadata crea el JSON descriptivo.
-10. URL.createObjectURL genera enlaces temporales.
-11. La persona descarga explícitamente video y JSON.
+10. URL.createObjectURL genera una vista previa temporal.
+11. Si pulsa Guardar seña, capture-store.mjs guarda video y metadata en IndexedDB de este navegador.
+12. Al recargar, puede ver la lista, reproducir cada clip o confirmar su eliminación.
 ```
 
-Nada se sube automáticamente. Si la persona cierra la pestaña sin descargar, puede perder el clip.
+Nada se sube. Si la persona cierra la pestaña sin guardar, pierde la vista previa temporal. Un clip guardado puede persistir al recargar el mismo origen y perfil, hasta que se borre manualmente o el navegador lo elimine; no se sincroniza entre dispositivos.
 
 ## Cómo agregar manualmente un video revisado
 
@@ -330,21 +336,20 @@ El proyecto no incluye videos privados en Git. La carpeta local `/videos/` está
 Proceso recomendado:
 
 1. Ejecutá el sitio en `http://localhost:8000`.
-2. Grabá un clip desde la sección Cámara.
-3. Descargá el video y el JSON.
-4. Revisá el clip con una persona o fuente competente antes de usarlo como material válido.
-5. Copiá manualmente el video revisado dentro de `videos/`.
-6. Abrí [src/catalog.mjs](../src/catalog.mjs).
-7. Cambiá el `videoPath` de la entrada correspondiente, por ejemplo:
+2. Conseguí el archivo de video por un proceso separado y autorizado; **Guardar seña** no ofrece exportarlo ni publicarlo.
+3. Revisá el clip con una persona competente en LSB y confirmá permiso para el uso previsto.
+4. Copiá manualmente ese archivo revisado dentro de `videos/`.
+5. Abrí [src/catalog.mjs](../src/catalog.mjs).
+6. Cambiá el `videoPath` de la entrada correspondiente, por ejemplo:
 
 ```js
 videoPath: 'videos/hola-revisado.webm'
 ```
 
-8. Recargá la página y buscá esa palabra.
-9. Probá que el video se vea en el diccionario y en la reproducción ordenada.
+7. Recargá la página y buscá esa palabra.
+8. Probá que el video se vea en el diccionario y en la reproducción ordenada.
 
-No cambies `validationStatus` ni textos de validez si no hubo revisión real. Un archivo grabado no prueba por sí mismo que la seña sea correcta.
+No cambies `validationStatus` ni textos de validez sin revisión real. Los videos privados ignorados por Git no aparecen en un sitio desplegado: se necesitan permiso y configuración de publicación por separado. Ningún video está enlazado hoy.
 
 ## Decisiones y tradeoffs del proyecto
 
@@ -352,11 +357,12 @@ No cambies `validationStatus` ni textos de validez si no hubo revisión real. Un
 | --- | --- | --- |
 | Sin backend | Fácil de ejecutar y explicar. | No hay cuentas, sincronización ni guardado central. |
 | Sin login | Menos complejidad y menos datos personales. | No hay perfiles ni historial por estudiante. |
-| Sin persistencia del navegador | Privacidad y comportamiento simple. | El progreso se pierde al recargar. |
+| Práctica sin persistencia | No registra avance del estudiante. | El progreso se pierde al recargar. |
+| Guardado local y explícito de clips | Video y metadata reaparecen al recargar el mismo origen. | El navegador puede rechazar o borrar datos; no hay copias de respaldo ni sincronización. |
 | Catálogo placeholder | Permite desarrollar UI sin inventar autoridad lingüística. | Todavía falta validación real de contenido. |
 | Videos privados ignorados | Evita publicar material sensible por accidente. | Un sitio publicado no tendrá esos videos automáticamente. |
 | Pruebas sobre funciones puras | Rápidas y fáciles de correr en Node. | No reemplazan pruebas manuales de navegador y cámara. |
-| Cámara con descarga explícita | La persona controla sus archivos. | Si no descarga, puede perder la grabación. |
+| Cámara con guardado explícito | La persona decide si conserva cada clip. | No exporta archivos y requiere consentimiento, espacio local y navegador compatible. |
 
 ## Pruebas existentes
 
@@ -371,9 +377,10 @@ Qué cubren:
 - [tests/catalog.test.mjs](../tests/catalog.test.mjs): normalización, tokens, búsqueda, categorías y videos disponibles.
 - [tests/lessons.test.mjs](../tests/lessons.test.mjs): creación de lecciones, avance y finalización de práctica.
 - [tests/capture.test.mjs](../tests/capture.test.mjs): soporte de cámara, MIME, etiquetas, metadata, nombres de archivo y limpieza de tracks.
-- [tests/dictionary-select.test.mjs](../tests/dictionary-select.test.mjs): las 15 categorías, el reinicio al cambiar categoría, la resolución exacta y el estado sin videos.
+- [tests/dictionary-select.test.mjs](../tests/dictionary-select.test.mjs): las 9 categorías, el reinicio al cambiar categoría, la resolución exacta y el estado sin videos.
+- [tests/capture-store.test.mjs](../tests/capture-store.test.mjs): operaciones de guardado local simuladas, colisiones, errores y abortos.
 
-Estas pruebas no abren una cámara real. Para eso hace falta una prueba manual en navegador.
+Estas pruebas no abren una cámara real ni prueban IndexedDB del navegador. Hace falta una prueba manual en navegador antes de afirmar esa integración.
 
 ## Glosario breve
 
@@ -385,7 +392,8 @@ Estas pruebas no abren una cámara real. Para eso hace falta una prueba manual e
 | DOM | Representación de la página HTML que JavaScript puede leer y modificar. |
 | Módulo JavaScript | Archivo `.mjs` o script `type="module"` que exporta e importa funciones. |
 | Backend | Servidor propio con lógica, base de datos o APIs. Este MVP no tiene backend. |
-| Persistencia | Guardar datos para que sigan después de cerrar o recargar. |
+| Persistencia | Guardar datos para que sigan después de cerrar o recargar. Solo los clips guardados explícitamente usan IndexedDB. |
+| IndexedDB | Almacenamiento local de este navegador y origen; no es un servidor ni una copia de respaldo. |
 | Blob | Objeto de datos usado para video o JSON en el navegador. |
 | objectURL | Enlace temporal que apunta a un Blob local en memoria. |
 | MIME type | Texto que describe el formato de un archivo, por ejemplo `video/webm`. |
@@ -417,17 +425,17 @@ Porque no hay videos revisados asociados. La aplicación debe mostrar un estado 
 En variables JavaScript de la pestaña, como `practiceSession`. No se guarda en disco ni en servidor.
 
 **5. ¿La cámara reconoce señas automáticamente?**  
-No. Solo graba un clip etiquetado y permite descargar video y metadata.
+No. Solo graba un clip etiquetado y deja guardarlo en este navegador tras una decisión explícita.
 
 **6. ¿Por qué se usa `python3 -m http.server` si la app es JavaScript?**  
 Porque sirve archivos estáticos para el navegador durante desarrollo. No ejecuta la lógica de la aplicación.
 
 **7. ¿Para qué sirve `node --test`?**  
-Para ejecutar pruebas automáticas sobre funciones JavaScript puras desde Node.
+Para ejecutar pruebas automáticas sobre funciones JavaScript puras y un almacén IndexedDB simulado desde Node.
 
 **8. ¿Qué significa `upload: 'none'` en la metadata?**  
 Que la grabación no fue subida por la aplicación a ningún servidor.
 
 ## Resumen final
 
-Tinku es un MVP de navegador que separa bien sus piezas: HTML para estructura, CSS para presentación, módulos JavaScript para lógica y pruebas Node para reglas puras. Sus decisiones favorecen privacidad, claridad y honestidad: no hay backend, no hay login, no hay persistencia automática y no hay reconocimiento de señas sin evidencia futura.
+Tinku es un MVP de navegador que separa bien sus piezas: HTML para estructura, CSS para presentación, módulos JavaScript para lógica y pruebas Node para reglas puras. Sus decisiones favorecen privacidad, claridad y honestidad: no hay backend, no hay login, solo hay persistencia local por elección para clips, y no hay reconocimiento de señas sin evidencia futura.
