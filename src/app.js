@@ -5,6 +5,11 @@ import {
   lookupText
 } from './catalog.mjs';
 import {
+  changeDictionaryCategory,
+  getDictionaryCategories,
+  resolveDictionaryEntry
+} from './dictionary-select.mjs';
+import {
   answerPracticeStep,
   buildBeginnerLessons,
   createPracticeSession,
@@ -35,6 +40,8 @@ const recognizedList = document.querySelector('#recognized-list');
 const unknownPanel = document.querySelector('#unknown-panel');
 const unknownList = document.querySelector('#unknown-list');
 const exampleButtons = document.querySelectorAll('[data-example]');
+const dictionaryCategorySelect = document.querySelector('#dictionary-category');
+const dictionaryWordSelect = document.querySelector('#dictionary-word');
 const playbackStatus = document.querySelector('#playback-status');
 const sequenceVideo = document.querySelector('#sequence-video');
 const previousVideoButton = document.querySelector('#previous-video');
@@ -196,7 +203,7 @@ function appendVideoState(card, entry) {
   card.appendChild(errorMessage);
 }
 
-function renderRecognized(result) {
+function renderRecognized(result, selected = false) {
   clearChildren(recognizedList);
 
   for (const item of result.recognized) {
@@ -206,7 +213,7 @@ function renderRecognized(result) {
     const header = createElement('div', 'card-header');
     const titleGroup = createElement('div');
     titleGroup.appendChild(createElement('h3', null, item.entry.displayLabel));
-    titleGroup.appendChild(createElement('p', 'meta', `Token reconocido: ${item.token}`));
+    titleGroup.appendChild(createElement('p', 'meta', selected ? 'Entrada seleccionada del catálogo' : `Token reconocido: ${item.token}`));
     header.appendChild(titleGroup);
     header.appendChild(createElement('span', 'badge', item.entry.category));
     card.appendChild(header);
@@ -233,7 +240,7 @@ function renderResult(inputText) {
   const unknownCount = result.unknown.length;
 
   if (result.tokens.length === 0) {
-    summary.textContent = `Catálogo ${CATALOG_VERSION}: ${STARTER_CATALOG.length} etiquetas iniciales disponibles para búsqueda textual.`;
+    summary.textContent = `Catálogo ${CATALOG_VERSION}: ${STARTER_CATALOG.length} etiquetas disponibles para búsqueda textual.`;
   } else {
     summary.textContent = `${recognizedCount} palabra(s) reconocida(s) y ${unknownCount} sin coincidencia, respetando el orden escrito.`;
   }
@@ -241,6 +248,50 @@ function renderResult(inputText) {
   preparePlayback(result);
   renderRecognized(result);
   renderUnknown(result);
+}
+
+function renderSelectedDictionaryEntry(entry) {
+  const result = {
+    tokens: [entry.label],
+    recognized: [{ token: entry.displayLabel, entry }],
+    unknown: []
+  };
+
+  summary.textContent = `Término seleccionado: ${entry.displayLabel} (${entry.category}). Esta es la entrada exacta elegida, no una búsqueda textual.`;
+  preparePlayback(result);
+  renderRecognized(result, true);
+  renderUnknown(result);
+}
+
+function populateDictionaryWordOptions(entries) {
+  clearChildren(dictionaryWordSelect);
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = entries.length > 0 ? 'Elegí una palabra o frase' : 'Primero elegí una categoría';
+  dictionaryWordSelect.appendChild(placeholder);
+
+  for (const entry of entries) {
+    const option = document.createElement('option');
+    option.value = entry.id;
+    option.textContent = entry.displayLabel;
+    dictionaryWordSelect.appendChild(option);
+  }
+
+  dictionaryWordSelect.disabled = entries.length === 0;
+}
+
+function resetDictionarySelectors() {
+  dictionaryCategorySelect.value = '';
+  populateDictionaryWordOptions([]);
+}
+
+function renderDictionarySelectorCategories() {
+  for (const category of getDictionaryCategories()) {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    dictionaryCategorySelect.appendChild(option);
+  }
 }
 
 function selectLesson(lesson) {
@@ -789,8 +840,31 @@ function cleanupCapture() {
   syncCaptureButtons();
 }
 
+dictionaryCategorySelect.addEventListener('change', () => {
+  const selection = changeDictionaryCategory(dictionaryCategorySelect.value);
+  dictionaryCategorySelect.value = selection.category;
+  input.value = '';
+  populateDictionaryWordOptions(selection.entries);
+  renderResult('');
+  if (selection.category) {
+    summary.textContent = `Elegí una palabra o frase de ${selection.category}.`;
+  }
+});
+
+dictionaryWordSelect.addEventListener('change', () => {
+  const entry = resolveDictionaryEntry(dictionaryCategorySelect.value, dictionaryWordSelect.value);
+  if (!entry) {
+    renderResult('');
+    summary.textContent = `Elegí una palabra o frase de ${dictionaryCategorySelect.value}.`;
+    return;
+  }
+
+  renderSelectedDictionaryEntry(entry);
+});
+
 form.addEventListener('submit', (event) => {
   event.preventDefault();
+  resetDictionarySelectors();
   renderResult(input.value);
 });
 
@@ -798,6 +872,7 @@ for (const button of exampleButtons) {
   button.addEventListener('click', () => {
     input.value = button.dataset.example;
     input.focus();
+    resetDictionarySelectors();
     renderResult(input.value);
   });
 }
@@ -860,6 +935,7 @@ window.addEventListener('beforeunload', cleanupCapture);
 
 renderLessons();
 renderPractice();
+renderDictionarySelectorCategories();
 renderCatalogLabelOptions();
 initializeCaptureSupport();
 renderResult('');

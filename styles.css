@@ -237,13 +237,36 @@ main {
   scroll-margin-top: calc(var(--topbar-height) + 1rem);
 }
 
+.dictionary-selectors,
 .lookup-form {
   display: grid;
   gap: 0.8rem;
   margin: 1.3rem 0 1rem;
 }
 
-.lookup-form label {
+.dictionary-selectors {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 56%);
+  padding: 1rem;
+}
+
+.dictionary-selectors h3 {
+  margin-bottom: 0;
+}
+
+.dictionary-selector-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.dictionary-selector-grid > div {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.lookup-form label,
+.dictionary-selector-grid label {
   font-weight: 800;
 }
 
@@ -499,6 +522,10 @@ select {
 }
 
 @media (min-width: 720px) {
+  .dictionary-selector-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .input-row {
     grid-template-columns: 1fr auto;
   }

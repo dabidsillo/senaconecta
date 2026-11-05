@@ -37,9 +37,29 @@
       <section id="dictionary" class="panel dictionary-panel" aria-labelledby="dictionary-title">
         <div class="section-heading">
           <p class="eyebrow">Diccionario</p>
-          <h2 id="dictionary-title">Buscar por texto</h2>
-          <p>Probá con “hola”, “gracias”, “estudiante”, “libro”, “agua” o “familia”.</p>
+          <h2 id="dictionary-title">Explorar por categoría o buscar por texto</h2>
+          <p>Elegí una categoría y una palabra exacta, o escribí una búsqueda libre como “Buenos días” o “Santa Cruz”.</p>
         </div>
+
+        <section class="dictionary-selectors" aria-labelledby="dictionary-selectors-title">
+          <h3 id="dictionary-selectors-title">Elegir una entrada del catálogo</h3>
+          <p class="help-text">La selección muestra una sola etiqueta exacta. La búsqueda por texto sigue siendo independiente y puede encontrar palabras o frases.</p>
+          <div class="dictionary-selector-grid">
+            <div>
+              <label for="dictionary-category">Categoría</label>
+              <select id="dictionary-category" name="dictionaryCategory" aria-describedby="dictionary-selectors-help">
+                <option value="">Elegí una categoría</option>
+              </select>
+            </div>
+            <div>
+              <label for="dictionary-word">Palabra o frase</label>
+              <select id="dictionary-word" name="dictionaryWord" aria-describedby="dictionary-selectors-help" disabled>
+                <option value="">Primero elegí una categoría</option>
+              </select>
+            </div>
+          </div>
+          <p id="dictionary-selectors-help" class="help-text">Las etiquetas son vocabulario textual provisto para el catálogo. Un estado pendiente no afirma que exista una seña LSB revisada en video.</p>
+        </section>
 
         <form id="lookup-form" class="lookup-form" autocomplete="off">
           <label for="lookup-input">Texto para buscar</label>
@@ -67,7 +87,7 @@
         </div>
 
         <section class="results" aria-live="polite" aria-atomic="false">
-          <p id="summary" class="summary">Ingresá texto para buscar en el catálogo inicial.</p>
+          <p id="summary" class="summary">Elegí una entrada o ingresá texto para buscar en el catálogo.</p>
 
           <section class="playback-panel" aria-labelledby="playback-title">
             <div>
@@ -87,7 +107,7 @@
 
           <div id="unknown-panel" class="unknown-panel" hidden>
             <h3>Palabras no encontradas</h3>
-            <p>Estas palabras todavía no están en el catálogo inicial:</p>
+            <p>Estas palabras todavía no están en el catálogo:</p>
             <div id="unknown-list" class="token-list"></div>
           </div>
         </section>

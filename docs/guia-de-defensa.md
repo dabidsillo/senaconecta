@@ -4,7 +4,7 @@ Esta guía te ayuda a defender el MVP ante un jurado mixto: algunas personas pue
 
 ## Mensaje central
 
-Tinku es una aplicación web local para explorar un catálogo inicial, practicar categorías y grabar clips etiquetados para revisión futura. No reconoce señas, no usa inteligencia artificial, no publica videos y no guarda datos en un servidor.
+Tinku es una aplicación web local para explorar 112 etiquetas textuales en 15 categorías, practicar categorías y grabar clips etiquetados para revisión futura. No reconoce señas, no usa inteligencia artificial, no publica videos y no guarda datos en un servidor.
 
 La frase más importante para decir con honestidad es esta:
 
@@ -15,8 +15,8 @@ La frase más importante para decir con honestidad es esta:
 Adaptá este guion a tu forma de hablar. No lo memorices palabra por palabra; mantené la estructura.
 
 1. **Problema.** “Muchas veces un proyecto escolar de lengua de señas quiere mostrar vocabulario, práctica y material de video, pero es fácil exagerar lo que el sistema realmente hace. Este MVP busca mostrar una base honesta y simple.”
-2. **Solución.** “La aplicación corre en el navegador. Permite buscar texto en un catálogo inicial, practicar palabras por categoría y, si la persona da permiso, grabar clips etiquetados para descargarlos junto con un JSON de metadata.”
-3. **Demostración.** “Voy a buscar texto, mostrar palabras reconocidas y no encontradas, practicar una categoría y explicar la cámara como función opcional. Como todavía no hay videos revisados, la app muestra ‘Video no disponible’ en lugar de inventar una seña.”
+2. **Solución.** “La aplicación corre en el navegador. Permite elegir una entrada exacta con categoría y palabra, buscar texto o frases libremente, practicar las 15 categorías y, si la persona da permiso, grabar clips etiquetados para descargarlos junto con un JSON de metadata.”
+3. **Demostración.** “Voy a seleccionar una palabra, hacer una búsqueda textual, mostrar coincidencias y texto no encontrado, practicar una categoría y explicar la cámara como función opcional. Como todavía no hay videos revisados, la app muestra ‘Video no disponible’ en lugar de inventar una seña.”
 4. **Límites.** “No hay backend, cuentas, IA, reconocimiento automático ni validación lingüística. El avance de práctica se pierde al recargar y los clips viven temporalmente en el navegador hasta que se descargan.”
 5. **Siguiente paso.** “El siguiente avance real sería revisar contenido con personas competentes en LSB, agregar videos locales revisados en `videos/`, declarar sus rutas en `src/catalog.mjs` y recién después evaluar funciones más avanzadas.”
 
@@ -33,16 +33,15 @@ Luego abrí `http://localhost:8000`. Evitá `file://` porque puede bloquear mód
 ### 1. Diccionario y búsqueda textual
 
 - [ ] Entrá a **Diccionario**.
-- [ ] Buscá `Hola estudiante`.
-- [ ] Mostrá que aparecen coincidencias del catálogo.
-- [ ] Buscá `Gracias agua misterio`.
-- [ ] Señalá que `misterio` aparece como palabra no encontrada.
-- [ ] Mostrá el estado “Video no disponible” y explicá que no se simula reproducción.
+- [ ] Elegí una categoría, por ejemplo `FAMILIA`, y después `Papá`; explicá que esa selección muestra exactamente esa entrada.
+- [ ] Cambiá a `VERDURAS` y elegí `Papa`; señalá que el selector limpió la palabra anterior para no confundir ambas entradas.
+- [ ] Buscá `Buenos días misterio` y señalá que `misterio` aparece como texto no encontrado.
+- [ ] Mostrá el estado “Video no disponible” y explicá que seleccionar o encontrar una etiqueta no prueba una seña LSB ni simula reproducción.
 
 ### 2. Práctica por categorías
 
 - [ ] Entrá a **Lecciones**.
-- [ ] Elegí una categoría, por ejemplo `Escuela` o `Saludos`.
+- [ ] Elegí una categoría, por ejemplo `SALUDOS` o `VERDURAS`.
 - [ ] Respondé una opción incorrecta y explicá que la práctica no avanza.
 - [ ] Respondé la opción correcta y mostrale al jurado que avanza.
 - [ ] Recargá la página si querés demostrar el límite: el progreso vuelve a empezar porque solo vive en memoria de la pestaña.
@@ -82,7 +81,7 @@ Hacé esta parte solo si el jurado y el entorno permiten usar cámara. Pedí per
 
 **¿La aplicación enseña LSB de forma validada?**
 
-No todavía. Muestra una estructura escolar y etiquetas de ejemplo; las entradas actuales son placeholder, no señas LSB validadas.
+No todavía. Muestra una estructura escolar y 112 etiquetas textuales en 15 categorías; las entradas actuales son placeholder, no señas LSB validadas.
 
 **¿Reconoce una seña desde la cámara?**
 
@@ -104,7 +103,7 @@ Porque demuestra la estructura responsable: catálogo, búsqueda, práctica, cap
 
 **¿Dónde está el catálogo?**
 
-En [src/catalog.mjs](../src/catalog.mjs). Ahí están `STARTER_CATALOG`, `videoPath: null` y `validationStatus: 'placeholder'`.
+En [src/catalog.mjs](../src/catalog.mjs). Ahí están `STARTER_CATALOG` con 112 entradas en 15 categorías, `videoPath: null` y `validationStatus: 'placeholder'`.
 
 **¿Cómo se evita inventar videos?**
 
@@ -134,7 +133,7 @@ No. Node ejecuta `node --test` para pruebas automáticas de módulos JavaScript.
 
 | Afirmación segura | Evidencia del repo | Cómo defenderla |
 | --- | --- | --- |
-| Hay búsqueda textual por catálogo. | [src/catalog.mjs](../src/catalog.mjs), [tests/catalog.test.mjs](../tests/catalog.test.mjs) | Buscar texto con palabras conocidas y desconocidas. |
+| Hay selección exacta y búsqueda textual por catálogo. | [src/dictionary-select.mjs](../src/dictionary-select.mjs), [src/catalog.mjs](../src/catalog.mjs), [tests/dictionary-select.test.mjs](../tests/dictionary-select.test.mjs) | Elegir categoría + palabra y después buscar una frase con texto conocido y desconocido. |
 | Las entradas actuales no tienen videos revisados. | `videoPath: null` y `validationStatus: 'placeholder'` en [src/catalog.mjs](../src/catalog.mjs) | Mostrar “Video no disponible”. |
 | La práctica por categorías usa el mismo catálogo. | [src/lessons.mjs](../src/lessons.mjs), [tests/lessons.test.mjs](../tests/lessons.test.mjs) | Elegir una lección y responder mal/correcto. |
 | El progreso no persiste al recargar. | [src/app.js](../src/app.js) mantiene `practiceSession` en memoria; README lo documenta. | Recargar la página y mostrar reinicio. |

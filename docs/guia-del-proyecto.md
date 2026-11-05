@@ -2,7 +2,7 @@
 
 Esta guía explica cómo está construido el MVP de Tinku, qué problema intenta resolver y qué decisiones técnicas tomó el proyecto. Está escrita para una estudiante o un estudiante que recién empieza con HTML, CSS y JavaScript.
 
-> Idea central: esta aplicación funciona en el navegador, sin servidor propio, sin cuentas y sin traducción automática de señas. Muestra un catálogo inicial, organiza lecciones y permite grabar clips etiquetados para revisión futura.
+> Idea central: esta aplicación funciona en el navegador, sin servidor propio, sin cuentas y sin traducción automática de señas. Muestra 112 etiquetas textuales en 15 categorías, organiza lecciones y permite grabar clips etiquetados para revisión futura.
 
 ## Ruta rápida para entender el proyecto
 
@@ -22,7 +22,7 @@ Tinku busca ser una base escolar simple para explorar vocabulario de Lengua de S
 - lecciones iniciales por categoría;
 - captura de videos etiquetados para análisis o entrenamiento futuro.
 
-El MVP no afirma que las entradas sean señas válidas. El catálogo actual usa etiquetas de ejemplo y estados `placeholder`. Por eso la interfaz muestra estados como “Video no disponible” cuando no hay una grabación revisada.
+El MVP no afirma que las entradas sean señas válidas. El catálogo actual reúne 112 palabras y frases provistas para 15 categorías, con estados `placeholder`. Por eso la interfaz muestra estados como “Video no disponible” cuando no hay una grabación revisada.
 
 ## Qué no hace este MVP
 
@@ -78,7 +78,8 @@ http://localhost:8000
 | --- | --- |
 | [index.html](../index.html) | Esqueleto de la interfaz: navegación fija al desplazarse, diccionario, lecciones y cámara. El catálogo compartido vive en JavaScript; no tiene una tarjeta propia. |
 | [styles.css](../styles.css) | Diseño visual mobile-first y adaptación responsiva. |
-| [src/catalog.mjs](../src/catalog.mjs) | Catálogo inicial, normalización de texto, búsqueda y secuencia de videos. |
+| [src/catalog.mjs](../src/catalog.mjs) | Catálogo compartido de 112 etiquetas en 15 categorías, normalización de texto, búsqueda y secuencia de videos. |
+| [src/dictionary-select.mjs](../src/dictionary-select.mjs) | Lógica pura del selector categoría → palabra y resolución exacta por categoría e ID. |
 | [src/lessons.mjs](../src/lessons.mjs) | Lecciones por categoría y estado de práctica en memoria. |
 | [src/capture.mjs](../src/capture.mjs) | Soporte de cámara, etiquetas, MIME, nombres seguros, metadata y limpieza. |
 | [src/app.js](../src/app.js) | Controlador del DOM: escucha eventos y renderiza resultados. |
@@ -87,7 +88,7 @@ http://localhost:8000
 
 ## index.html: estructura de la experiencia
 
-[index.html](../index.html) define una página completa en español. No contiene la lógica de búsqueda ni de cámara; contiene los elementos que JavaScript va a leer y modificar.
+[index.html](../index.html) define una página completa en español. No contiene la lógica de búsqueda ni de cámara; contiene los elementos que JavaScript va a leer y modificar. El diccionario ofrece dos caminos: selector dependiente de categoría → palabra para una entrada exacta y búsqueda libre para texto o frases.
 
 Tiene cuatro zonas principales:
 
@@ -138,7 +139,7 @@ Algunas clases importantes:
 El catálogo arranca con:
 
 ```js
-export const CATALOG_VERSION = 'starter-placeholder-v1';
+export const CATALOG_VERSION = 'final-vocabulary-v2';
 ```
 
 Cada entrada tiene datos como `id`, `label`, `displayLabel`, `category`, `description`, `videoPath` y `validationStatus`.
@@ -160,13 +161,15 @@ Funciones clave:
 - `lookupText(input, catalog)`: devuelve palabras reconocidas y desconocidas.
 - `getPlayableSequence(recognizedItems)`: filtra solo resultados con `videoPath` real.
 
-Flujo simple de búsqueda:
+Flujo simple de búsqueda libre:
 
 ```text
 texto escrito → normalizeText → tokenizeText → lookupText → resultados reconocidos/desconocidos
 ```
 
-Si la persona escribe “Hola estudiante y agua”, el sistema reconoce las palabras que están en el catálogo y conserva el orden de aparición.
+Si la persona escribe “Buenos días misterio”, el sistema reconoce la frase completa que está en el catálogo y conserva `misterio` como texto no encontrado. Este camino puede devolver más de una coincidencia para una forma ambigua, por ejemplo `papa`.
+
+Para elegir una sola entrada sin ambigüedad, el selector usa `src/dictionary-select.mjs`: primero carga las 15 categorías, luego habilita solo las palabras de la categoría elegida y finalmente resuelve la entrada por la pareja categoría + `id`. Así `Papá` de FAMILIA y `Papa` de VERDURAS siguen siendo selecciones independientes.
 
 ## src/lessons.mjs: lecciones por categoría
 
@@ -364,6 +367,7 @@ Qué cubren:
 - [tests/catalog.test.mjs](../tests/catalog.test.mjs): normalización, tokens, búsqueda, categorías y videos disponibles.
 - [tests/lessons.test.mjs](../tests/lessons.test.mjs): creación de lecciones, avance y finalización de práctica.
 - [tests/capture.test.mjs](../tests/capture.test.mjs): soporte de cámara, MIME, etiquetas, metadata, nombres de archivo y limpieza de tracks.
+- [tests/dictionary-select.test.mjs](../tests/dictionary-select.test.mjs): las 15 categorías, el reinicio al cambiar categoría, la resolución exacta y el estado sin videos.
 
 Estas pruebas no abren una cámara real. Para eso hace falta una prueba manual en navegador.
 
