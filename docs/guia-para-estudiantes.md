@@ -60,7 +60,7 @@ nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
 
 Estos ejemplos son literales del proyecto. La última llave de CSS está más abajo en el archivo: se muestra solo el comienzo para que sea corto.
 
-Para mirar el aspecto de la página con ejemplos breves, seguí con [CSS paso a paso](codigo-css-paso-a-paso.md). Explica colores, foco de teclado, la galería horizontal y qué cambia en pantallas más anchas.
+Para mirar el aspecto de la página con ejemplos breves, seguí con [CSS paso a paso](codigo-css-paso-a-paso.md). Explica colores, foco de teclado, la galería horizontal y qué cambia en pantallas más anchas. Para seguir las acciones de búsqueda, diccionario y práctica, leé [JavaScript: catálogo, diccionario y lecciones](codigo-js-catalogo-y-lecciones.md).
 
 ### Tres palabras que podés reconocer
 
@@ -72,7 +72,7 @@ Para mirar el aspecto de la página con ejemplos breves, seguí con [CSS paso a 
 
 ### 1. Diccionario
 
-Elegí una categoría y luego una palabra o frase. Mostrá que **Familia → Papá** y **Verduras → Papa** no son lo mismo: la categoría y la tilde ayudan a mantener las entradas separadas. La búsqueda libre trabaja con texto; no mira ni interpreta una seña hecha con las manos.
+Elegí una categoría y luego una palabra o frase. Mostrá que **Familia → Papá** y **Verduras → Papa** no son lo mismo: el selector usa la categoría y el identificador propio de cada entrada. La búsqueda libre ignora la tilde y puede encontrar ambas; no mira ni interpreta una seña hecha con las manos.
 
 Si aparece “Video no disponible”, explicá la verdad: la etiqueta existe en el catálogo, pero no hay un video cargado y revisado para mostrar. No inventes una seña ni digas que un resultado fue validado por LSB.
 
@@ -102,7 +102,7 @@ Si usás Windows, podés probar `iniciar-tinku.bat` con Python 3 instalado; toda
 
 **¿Los videos ya son LSB validados?**  No. El catálogo actual puede mostrar que falta video; cualquier clip debe ser revisado por personas calificadas antes de presentarlo como válido.
 
-**¿Qué ocurre con mi grabación?**  Queda temporalmente en el navegador hasta que la descargás, la reemplazás o cerrás la página. Nada se sube automáticamente. Para conservarla, descargá el video y el JSON.
+**¿Qué ocurre con mi grabación?**  Queda temporalmente en el navegador hasta que la reemplazás, recargás o cerrás la página. Descargarla no borra la vista previa. Nada se sube automáticamente. Para conservarla, descargá el video y el JSON.
 
 **¿Por qué se borra la práctica al recargar?**  Porque el avance se mantiene solo en la memoria de la pestaña. Así el prototipo no crea perfiles ni guarda progreso permanente.
 
