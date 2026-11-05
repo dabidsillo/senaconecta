@@ -19,6 +19,16 @@ const VOCABULARY_BY_CATEGORY = Object.freeze({
 });
 
 const WORD_PATTERN = /[\p{L}\p{N}]+/gu;
+const CATEGORY_PROPER_NAMES = Object.freeze({
+  BOLIVIA: 'Bolivia'
+});
+
+export function formatCategoryLabel(category) {
+  return String(category ?? '')
+    .toLocaleLowerCase('es-BO')
+    .replace(/\bbolivia\b/gu, CATEGORY_PROPER_NAMES.BOLIVIA)
+    .replace(/^./u, (letter) => letter.toLocaleUpperCase('es-BO'));
+}
 
 export function normalizeText(value) {
   return String(value ?? '')

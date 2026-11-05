@@ -5,11 +5,30 @@ import {
   STARTER_CATALOG,
   createLexicon,
   entriesByCategory,
+  formatCategoryLabel,
   getPlayableSequence,
   lookupText,
   normalizeText,
   tokenizeText
 } from '../src/catalog.mjs';
+
+const EXPECTED_CATEGORY_LABELS = {
+  SALUDOS: 'Saludos',
+  FAMILIA: 'Familia',
+  ALIMENTOS: 'Alimentos',
+  LUGARES: 'Lugares',
+  COLORES: 'Colores',
+  ANIMALES: 'Animales',
+  'DEPARTAMENTOS DE BOLIVIA': 'Departamentos de Bolivia',
+  NATURALEZA: 'Naturaleza',
+  'MEDIOS DE TRANSPORTE': 'Medios de transporte',
+  VERDURAS: 'Verduras',
+  FRUTAS: 'Frutas',
+  VERBOS: 'Verbos',
+  PRONOMBRES: 'Pronombres',
+  NÚMEROS: 'Números',
+  'DÍAS DE LA SEMANA': 'Días de la semana'
+};
 
 const EXPECTED_INVENTORY = {
   SALUDOS: ['Hola', 'Chau', 'Buenos días', 'Buenas tardes', 'Buenas noches', 'Gracias', 'Por favor', '¿Cómo estás?', 'Estoy bien', 'Mal', 'Más o menos', 'Sí', 'No', 'Lo siento', 'Te amo'],
@@ -48,6 +67,17 @@ test('catalog contains the exact 112 supplied entries in the 15 supplied categor
     EXPECTED_INVENTORY
   );
   assert.equal(new Set(STARTER_CATALOG.map((entry) => entry.id)).size, STARTER_CATALOG.length);
+});
+
+test('formatCategoryLabel displays all canonical categories without changing catalog values', () => {
+  assert.deepEqual(
+    Object.fromEntries(Object.keys(EXPECTED_CATEGORY_LABELS).map((category) => [category, formatCategoryLabel(category)])),
+    EXPECTED_CATEGORY_LABELS
+  );
+  assert.deepEqual(
+    [...new Set(STARTER_CATALOG.map((entry) => entry.category))].sort((a, b) => a.localeCompare(b, 'es')),
+    Object.keys(EXPECTED_CATEGORY_LABELS).sort((a, b) => a.localeCompare(b, 'es'))
+  );
 });
 
 test('catalog retains user-provided spelling and placeholder media status without aliases', () => {

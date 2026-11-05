@@ -1,4 +1,4 @@
-import { STARTER_CATALOG, entriesByCategory } from './catalog.mjs';
+import { STARTER_CATALOG, entriesByCategory, formatCategoryLabel } from './catalog.mjs';
 
 export function buildBeginnerLessons(catalog = STARTER_CATALOG) {
   return entriesByCategory(catalog)
@@ -7,7 +7,7 @@ export function buildBeginnerLessons(catalog = STARTER_CATALOG) {
       id: `lesson-${index + 1}-${group.category.toLocaleLowerCase('es-BO').replace(/\s+/g, '-')}`,
       position: index + 1,
       category: group.category,
-      title: `${group.category}: primeras etiquetas`,
+      title: `${formatCategoryLabel(group.category)}: primeras etiquetas`,
       summary: `Reconocé ${group.entries.length} etiquetas del catálogo compartido.`,
       entries: group.entries,
       validationNote: 'Material ilustrativo pendiente de validación lingüística y de videos reales.'

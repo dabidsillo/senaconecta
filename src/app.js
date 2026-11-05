@@ -1,6 +1,7 @@
 import {
   CATALOG_VERSION,
   STARTER_CATALOG,
+  formatCategoryLabel,
   getPlayableSequence,
   lookupText
 } from './catalog.mjs';
@@ -215,7 +216,7 @@ function renderRecognized(result, selected = false) {
     titleGroup.appendChild(createElement('h3', null, item.entry.displayLabel));
     titleGroup.appendChild(createElement('p', 'meta', selected ? 'Entrada seleccionada del catálogo' : `Token reconocido: ${item.token}`));
     header.appendChild(titleGroup);
-    header.appendChild(createElement('span', 'badge', item.entry.category));
+    header.appendChild(createElement('span', 'badge', formatCategoryLabel(item.entry.category)));
     card.appendChild(header);
 
     card.appendChild(createElement('span', 'status-pill', item.entry.videoPath ? 'Video declarado' : 'Pendiente de video'));
@@ -257,7 +258,7 @@ function renderSelectedDictionaryEntry(entry) {
     unknown: []
   };
 
-  summary.textContent = `Término seleccionado: ${entry.displayLabel} (${entry.category}). Esta es la entrada exacta elegida, no una búsqueda textual.`;
+  summary.textContent = `Término seleccionado: ${entry.displayLabel} (${formatCategoryLabel(entry.category)}). Esta es la entrada exacta elegida, no una búsqueda textual.`;
   preparePlayback(result);
   renderRecognized(result, true);
   renderUnknown(result);
@@ -289,7 +290,7 @@ function renderDictionarySelectorCategories() {
   for (const category of getDictionaryCategories()) {
     const option = document.createElement('option');
     option.value = category;
-    option.textContent = category;
+    option.textContent = formatCategoryLabel(category);
     dictionaryCategorySelect.appendChild(option);
   }
 }
@@ -538,7 +539,7 @@ function renderCatalogLabelOptions() {
   for (const entry of STARTER_CATALOG) {
     const option = document.createElement('option');
     option.value = entry.id;
-    option.textContent = `${entry.displayLabel} — ${entry.category}`;
+    option.textContent = `${entry.displayLabel} — ${formatCategoryLabel(entry.category)}`;
     catalogLabelSelect.appendChild(option);
   }
 }
@@ -847,7 +848,7 @@ dictionaryCategorySelect.addEventListener('change', () => {
   populateDictionaryWordOptions(selection.entries);
   renderResult('');
   if (selection.category) {
-    summary.textContent = `Elegí una palabra o frase de ${selection.category}.`;
+    summary.textContent = `Elegí una palabra o frase de ${formatCategoryLabel(selection.category)}.`;
   }
 });
 
@@ -855,7 +856,7 @@ dictionaryWordSelect.addEventListener('change', () => {
   const entry = resolveDictionaryEntry(dictionaryCategorySelect.value, dictionaryWordSelect.value);
   if (!entry) {
     renderResult('');
-    summary.textContent = `Elegí una palabra o frase de ${dictionaryCategorySelect.value}.`;
+    summary.textContent = `Elegí una palabra o frase de ${formatCategoryLabel(dictionaryCategorySelect.value)}.`;
     return;
   }
 

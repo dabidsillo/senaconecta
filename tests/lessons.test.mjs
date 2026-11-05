@@ -36,6 +36,15 @@ test('buildBeginnerLessons creates all 15 category lessons from the shared final
   assert.ok(lessons.every((lesson) => lesson.entries.every((entry) => entry.validationStatus === 'placeholder')));
 });
 
+test('buildBeginnerLessons formats the selected lesson title while retaining its stable ID', () => {
+  const lesson = buildBeginnerLessons(STARTER_CATALOG)
+    .find((candidate) => candidate.category === 'DEPARTAMENTOS DE BOLIVIA');
+
+  assert.equal(lesson.title, 'Departamentos de Bolivia: primeras etiquetas');
+  assert.equal(lesson.id, 'lesson-4-departamentos-de-bolivia');
+  assert.equal(lesson.category, 'DEPARTAMENTOS DE BOLIVIA');
+});
+
 test('buildBeginnerLessons rejects empty or one-card categories for beginner progression', () => {
   const lessons = buildBeginnerLessons([
     { id: 'a', label: 'uno', displayLabel: 'Uno', category: 'A', validationStatus: 'placeholder' },
