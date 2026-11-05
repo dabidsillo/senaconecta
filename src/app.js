@@ -312,17 +312,8 @@ function renderLessons() {
       card.classList.add('is-active');
     }
 
-    card.appendChild(createElement('p', 'eyebrow', `Lección ${lesson.position}`));
     card.appendChild(createElement('h3', null, lesson.title));
     card.appendChild(createElement('p', 'meta', lesson.summary));
-
-    const list = document.createElement('ul');
-    for (const entry of lesson.entries) {
-      const item = document.createElement('li');
-      item.textContent = entry.displayLabel;
-      list.appendChild(item);
-    }
-    card.appendChild(list);
     card.appendChild(createElement('p', 'unavailable', lesson.validationNote));
 
     const actions = createElement('div', 'lesson-actions');

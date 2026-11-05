@@ -123,7 +123,12 @@
             si recargás la página, empieza de nuevo.
           </p>
         </div>
-        <div id="lesson-list" class="lesson-list" aria-label="Lecciones por categoría"></div>
+        <div class="lesson-gallery-controls" role="group" aria-label="Navegación de lecciones">
+          <button id="previous-lesson" type="button" aria-label="Ver lecciones anteriores" disabled>Anterior</button>
+          <button id="next-lesson" type="button" aria-label="Ver más lecciones" disabled>Siguiente</button>
+        </div>
+        <p id="lesson-gallery-help" class="help-text">Deslizá o usá el teclado para recorrer las lecciones.</p>
+        <div id="lesson-list" class="lesson-list" role="region" tabindex="0" aria-label="Galería desplazable de lecciones por categoría" aria-describedby="lesson-gallery-help"></div>
         <section class="practice-panel" aria-labelledby="practice-title" aria-live="polite">
           <div>
             <p class="eyebrow">Práctica interactiva</p>
