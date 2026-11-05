@@ -230,6 +230,10 @@ main {
   padding: var(--panel-padding);
 }
 
+.lessons-panel {
+  min-width: 0;
+}
+
 #dictionary,
 #lessons,
 #capture,
@@ -357,7 +361,9 @@ select {
 
 .lesson-list {
   display: grid;
-  grid-auto-columns: minmax(0, min(84%, 20rem));
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  grid-auto-columns: clamp(15rem, 72vw, 20rem);
   grid-auto-flow: column;
   gap: 0.9rem;
   overflow-x: auto;

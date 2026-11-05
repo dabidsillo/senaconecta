@@ -40,7 +40,9 @@ No hace falta aprender símbolos. Para explicarlos, apuntá al archivo correcto.
 ```css
 .lesson-list {
   display: grid;
-  grid-auto-columns: minmax(0, min(84%, 20rem));
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  grid-auto-columns: clamp(15rem, 72vw, 20rem);
   grid-auto-flow: column;
   gap: 0.9rem;
   overflow-x: auto;
@@ -58,7 +60,7 @@ const lessonList = document.querySelector('#lesson-list');
 nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
 ```
 
-Estos ejemplos son literales del proyecto. La última llave de CSS está más abajo en el archivo: se muestra solo el comienzo para que sea corto.
+Estos ejemplos son literales del proyecto. Cada tarjeta mide como mínimo `15rem`, apunta a `72vw` según el ancho de la ventana y no supera `20rem`; la lista se mantiene dentro de su contenedor. La última llave de CSS está más abajo en el archivo: se muestra solo el comienzo para que sea corto.
 
 Para estudiar el código por partes, seguí este orden (podés detenerte después de cualquiera):
 

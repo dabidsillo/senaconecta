@@ -109,10 +109,15 @@ select:focus-visible {
 - **Qué ves:** una receta para `panel` y otra para tarjetas. **Qué significa:** `grid` ordena cajas y `gap` deja espacio. **Qué pasa:** diccionario, lecciones y cámara se ven como paneles; CSS no decide cuáles tarjetas existen ni carga datos.
 
 ## 4. Lecciones: fila horizontal
+
+Antes de la lista, `.lessons-panel { min-width: 0; }` permite que la sección mantenga el ancho de la página aunque tenga 15 tarjetas. Así se desplaza **la galería**, no toda la página.
+
 ```css
 .lesson-list {
   display: grid;
-  grid-auto-columns: minmax(0, min(84%, 20rem));
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  grid-auto-columns: clamp(15rem, 72vw, 20rem);
   grid-auto-flow: column;
   gap: 0.9rem;
   overflow-x: auto;
@@ -124,7 +129,7 @@ select:focus-visible {
   scroll-snap-stop: always;
 }
 ```
-- **Qué ves:** clases de la galería `id="lesson-list"` y sus tarjetas; es un recorte parcial. **Qué significa:** se agregan columnas, cada una como máximo el menor valor entre 84% y `20rem`, con desplazamiento y `scroll-snap`. **Qué pasa:** se recorren horizontalmente; JavaScript crea las tarjetas y CSS las presenta.
+- **Qué ves:** clases de la galería `id="lesson-list"` y sus tarjetas; es un recorte parcial. **Qué significa:** cada columna mide por lo menos `15rem`, usa `72vw` como tamaño adaptable al ancho de la ventana y no supera `20rem`; los límites en línea contienen la lista. El desplazamiento y `scroll-snap` se conservan. **Qué pasa:** se recorren horizontalmente; JavaScript crea las tarjetas y CSS las presenta.
 
 ## 5. Cámara y descargas
 ```css
