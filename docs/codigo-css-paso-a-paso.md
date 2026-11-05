@@ -166,7 +166,7 @@ select:focus-visible {
   }
 }
 ```
-- **Qué ves:** una media query de movimiento. **Qué significa:** si el sistema prefiere menos movimiento, usa desplazamiento normal. **Qué pasa:** el navegador puede evitar la animación; esa preferencia viene del sistema o navegador, no de CSS.
+- **Qué ves:** una media query de movimiento. **Qué significa:** si el sistema pide menos movimiento, el desplazamiento suave de `html` pasa a `auto`. **Qué pasa:** los saltos de la página dejan de pedir desplazamiento suave; esta regla no elimina las transiciones de los botones ni cambia por sí sola la galería.
 
 ## Probá y observá
 1. Abrí Tinku y presioná Tab hasta un enlace, campo o botón. **Resultado esperado:** aparece un borde de foco color acento alrededor del control enfocado.

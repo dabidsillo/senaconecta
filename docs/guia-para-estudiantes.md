@@ -60,7 +60,12 @@ nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
 
 Estos ejemplos son literales del proyecto. La última llave de CSS está más abajo en el archivo: se muestra solo el comienzo para que sea corto.
 
-Para mirar el aspecto de la página con ejemplos breves, seguí con [CSS paso a paso](codigo-css-paso-a-paso.md). Explica colores, foco de teclado, la galería horizontal y qué cambia en pantallas más anchas. Para seguir las acciones de búsqueda, diccionario y práctica, leé [JavaScript: catálogo, diccionario y lecciones](codigo-js-catalogo-y-lecciones.md). Para entender la cámara, los límites de grabación y las descargas sin subir archivos, continuá con [JavaScript: cámara y descargas](codigo-js-camara-y-descargas.md).
+Para estudiar el código por partes, seguí este orden (podés detenerte después de cualquiera):
+
+1. [HTML paso a paso](codigo-html-paso-a-paso.md): qué elementos forman la página.
+2. [CSS paso a paso](codigo-css-paso-a-paso.md): colores, foco, galería y pantallas anchas.
+3. [JavaScript: catálogo, diccionario y lecciones](codigo-js-catalogo-y-lecciones.md): búsqueda y práctica.
+4. [JavaScript: cámara y descargas](codigo-js-camara-y-descargas.md): permisos, grabación y archivos locales.
 
 ### Tres palabras que podés reconocer
 

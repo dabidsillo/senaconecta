@@ -1,6 +1,6 @@
 # JavaScript: cámara, clips y descargas
 
-Esta guía sigue el recorrido de la cámara de Tinku sin pedirte que memorices JavaScript. Vas a poder explicar qué se necesita para grabar, qué datos acompaña al clip y por qué nada se sube solo. Leela junto con la [guía para estudiantes](guia-para-estudiantes.md).
+Esta guía sigue el recorrido de la cámara de Tinku sin pedirte que memorices JavaScript. Vas a poder explicar qué se necesita para grabar, qué datos acompaña al clip y por qué nada se sube solo. Leela junto con la [guía para estudiantes](guia-para-estudiantes.md). **Si recién empezás, leé primero el mapa, el ejemplo y el ejercicio; dejá los fragmentos técnicos para una segunda pasada acompañada.**
 
 ## Mapa corto
 El navegador comprueba si puede pedir cámara y grabar video. Con permiso, guarda una transmisión activa y habilita los botones correctos. Una etiqueta del catálogo identifica el clip; una etiqueta escrita por la persona tiene prioridad. Al empezar, la etiqueta queda fija; al terminar se preparan un video y un JSON para descargar. Al recargar, cerrar o iniciar otra captura, se libera la memoria temporal.
