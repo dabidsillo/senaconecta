@@ -129,6 +129,7 @@ Algunas clases importantes:
 - `.panel`: caja general para secciones.
 - `.card-grid`: grilla de resultados.
 - `.video-placeholder`: estado visible cuando no hay video.
+- `.lesson-list`: galería horizontal con tarjetas compactas, ajuste por CSS scroll snap y foco visible.
 - `.capture-panel`: zona de cámara y descargas.
 - `.metadata-preview`: vista del JSON generado.
 
@@ -299,6 +300,8 @@ Este flujo demuestra separación de responsabilidades: el catálogo decide qué 
 7. app.js vuelve a renderizar la práctica.
 8. Al recargar la página, el estado desaparece.
 ```
+
+Las 15 categorías aparecen como tarjetas compactas en una galería horizontal. Se puede avanzar con touch o trackpad, enfocar la galería para recorrerla con teclado o usar los botones Anterior y Siguiente; cada botón avanza una tarjeta y se desactiva en el límite. La práctica elegida sigue debajo de la galería.
 
 El punto educativo es que el progreso no se guarda en una base de datos. Solo vive en variables JavaScript como `practiceSession` mientras la pestaña está abierta.
 

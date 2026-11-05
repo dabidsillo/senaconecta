@@ -17,6 +17,10 @@ import {
   getPracticePrompt
 } from './lessons.mjs';
 import {
+  getGalleryBoundaries,
+  getNextGalleryTarget
+} from './lesson-gallery.mjs';
+import {
   DEFAULT_RECORDING_LIMIT_MS,
   DEFAULT_STOP_PENDING_TIMEOUT_MS,
   buildCaptureMetadata,
@@ -49,6 +53,8 @@ const previousVideoButton = document.querySelector('#previous-video');
 const playCurrentVideoButton = document.querySelector('#play-current-video');
 const nextVideoButton = document.querySelector('#next-video');
 const lessonList = document.querySelector('#lesson-list');
+const previousLessonButton = document.querySelector('#previous-lesson');
+const nextLessonButton = document.querySelector('#next-lesson');
 const practiceTitle = document.querySelector('#practice-title');
 const practiceStatus = document.querySelector('#practice-status');
 const practiceCard = document.querySelector('#practice-card');
@@ -296,15 +302,51 @@ function renderDictionarySelectorCategories() {
   }
 }
 
-function selectLesson(lesson) {
-  selectedLesson = lesson;
-  practiceSession = createPracticeSession(lesson);
-  renderLessons();
-  renderPractice();
+function getLessonCardOffsets() {
+  const listLeft = lessonList.getBoundingClientRect().left;
+  const offsets = Array.from(lessonList.children, (card) => (
+    card.getBoundingClientRect().left - listLeft + lessonList.scrollLeft
+  ));
+  const firstOffset = offsets[0] ?? 0;
+  return offsets.map((offset) => offset - firstOffset);
 }
 
-function renderLessons() {
+function syncLessonGalleryControls() {
+  const boundaries = getGalleryBoundaries({
+    scrollLeft: lessonList.scrollLeft,
+    clientWidth: lessonList.clientWidth,
+    scrollWidth: lessonList.scrollWidth
+  });
+  previousLessonButton.disabled = boundaries.atStart;
+  nextLessonButton.disabled = boundaries.atEnd;
+}
+
+function scrollLessonGallery(direction) {
+  const target = getNextGalleryTarget({
+    scrollLeft: lessonList.scrollLeft,
+    cardOffsets: getLessonCardOffsets(),
+    direction,
+    clientWidth: lessonList.clientWidth,
+    scrollWidth: lessonList.scrollWidth
+  });
+  // Instant movement makes each click advance one card even when buttons are clicked rapidly.
+  lessonList.scrollTo({ left: target, behavior: 'auto' });
+}
+
+function selectLesson(lesson, restoreGalleryFocus = false) {
+  const scrollLeft = lessonList.scrollLeft;
+  selectedLesson = lesson;
+  practiceSession = createPracticeSession(lesson);
+  const selectedAction = renderLessons(scrollLeft);
+  renderPractice();
+  if (restoreGalleryFocus) {
+    selectedAction?.focus({ preventScroll: true });
+  }
+}
+
+function renderLessons(scrollLeft = lessonList.scrollLeft) {
   clearChildren(lessonList);
+  let selectedAction = null;
 
   for (const lesson of beginnerLessons) {
     const card = createElement('article', 'lesson-card');
@@ -319,12 +361,23 @@ function renderLessons() {
     const actions = createElement('div', 'lesson-actions');
     const startButton = createElement('button', null, lesson.id === selectedLesson?.id ? 'Reiniciar práctica' : 'Practicar esta categoría');
     startButton.type = 'button';
-    startButton.addEventListener('click', () => selectLesson(lesson));
+    startButton.addEventListener('click', () => selectLesson(lesson, document.activeElement === startButton));
     actions.appendChild(startButton);
+    if (lesson.id === selectedLesson?.id) {
+      selectedAction = startButton;
+    }
     card.appendChild(actions);
 
     lessonList.appendChild(card);
   }
+
+  lessonList.scrollLeft = getGalleryBoundaries({
+    scrollLeft,
+    clientWidth: lessonList.clientWidth,
+    scrollWidth: lessonList.scrollWidth
+  }).scrollLeft;
+  syncLessonGalleryControls();
+  return selectedAction;
 }
 
 function renderPracticeFeedback() {
@@ -887,6 +940,11 @@ for (const button of exampleButtons) {
     renderResult(input.value);
   });
 }
+
+previousLessonButton.addEventListener('click', () => scrollLessonGallery(-1));
+nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
+lessonList.addEventListener('scroll', syncLessonGalleryControls, { passive: true });
+window.addEventListener('resize', syncLessonGalleryControls);
 
 previousVideoButton.addEventListener('click', () => {
   if (currentPlaybackIndex > 0) {

@@ -422,6 +422,7 @@ select {
 .lesson-card {
   align-content: start;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .card-header {

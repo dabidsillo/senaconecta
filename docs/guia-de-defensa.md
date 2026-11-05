@@ -41,6 +41,8 @@ Luego abrí `http://localhost:8000`. Evitá `file://` porque puede bloquear mód
 ### 2. Práctica por categorías
 
 - [ ] Entrá a **Lecciones**.
+- [ ] Mostrá las 15 categorías en la galería horizontal: usá touch/trackpad, enfocá la galería con teclado o presioná Anterior y Siguiente para avanzar una tarjeta.
+- [ ] Señalá que los botones se desactivan al llegar a cada extremo y que la práctica sigue debajo de la galería.
 - [ ] Elegí una categoría, por ejemplo `Saludos` o `Verduras`.
 - [ ] Respondé una opción incorrecta y explicá que la práctica no avanza.
 - [ ] Respondé la opción correcta y mostrale al jurado que avanza.
