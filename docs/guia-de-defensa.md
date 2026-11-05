@@ -33,15 +33,15 @@ Luego abrí `http://localhost:8000`. Evitá `file://` porque puede bloquear mód
 ### 1. Diccionario y búsqueda textual
 
 - [ ] Entrá a **Diccionario**.
-- [ ] Elegí una categoría, por ejemplo `FAMILIA`, y después `Papá`; explicá que esa selección muestra exactamente esa entrada.
-- [ ] Cambiá a `VERDURAS` y elegí `Papa`; señalá que el selector limpió la palabra anterior para no confundir ambas entradas.
+- [ ] Elegí una categoría, por ejemplo `Familia`, y después `Papá`; explicá que esa selección muestra exactamente esa entrada.
+- [ ] Cambiá a `Verduras` y elegí `Papa`; señalá que el selector limpió la palabra anterior para no confundir ambas entradas.
 - [ ] Buscá `Buenos días misterio` y señalá que `misterio` aparece como texto no encontrado.
 - [ ] Mostrá el estado “Video no disponible” y explicá que seleccionar o encontrar una etiqueta no prueba una seña LSB ni simula reproducción.
 
 ### 2. Práctica por categorías
 
 - [ ] Entrá a **Lecciones**.
-- [ ] Elegí una categoría, por ejemplo `SALUDOS` o `VERDURAS`.
+- [ ] Elegí una categoría, por ejemplo `Saludos` o `Verduras`.
 - [ ] Respondé una opción incorrecta y explicá que la práctica no avanza.
 - [ ] Respondé la opción correcta y mostrale al jurado que avanza.
 - [ ] Recargá la página si querés demostrar el límite: el progreso vuelve a empezar porque solo vive en memoria de la pestaña.
@@ -52,7 +52,7 @@ Hacé esta parte solo si el jurado y el entorno permiten usar cámara. Pedí per
 
 - [ ] Entrá a **Cámara**.
 - [ ] Explicá que `index.html` dice que la cámara no traduce señas ni reconoce movimientos.
-- [ ] Elegí una etiqueta del catálogo o escribí una etiqueta personalizada.
+- [ ] Elegí una categoría y después una palabra o frase del catálogo, por ejemplo `Familia` y `Papá`; o escribí una etiqueta personalizada, que funciona sin categoría y reemplaza el catálogo.
 - [ ] Iniciá cámara solo si hay permiso.
 - [ ] Grabá un clip corto y detenelo.
 - [ ] Mostrá la vista previa, el botón **Descargar video** y el botón **Descargar metadata JSON**.

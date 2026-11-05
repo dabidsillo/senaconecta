@@ -146,8 +146,20 @@
         <div id="capture-support" class="summary" role="status">Revisando capacidades de cámara y grabación…</div>
 
         <form id="capture-form" class="capture-form" autocomplete="off">
-          <label for="catalog-label">Etiqueta del catálogo</label>
-          <select id="catalog-label" name="catalogLabel"></select>
+          <div class="dictionary-selector-grid">
+            <div>
+              <label for="capture-category">Categoría del catálogo</label>
+              <select id="capture-category" name="captureCategory" aria-describedby="capture-label-help">
+                <option value="">Elegí una categoría</option>
+              </select>
+            </div>
+            <div>
+              <label for="catalog-label">Palabra o frase del catálogo</label>
+              <select id="catalog-label" name="catalogLabel" aria-describedby="capture-label-help" disabled>
+                <option value="">Primero elegí una categoría</option>
+              </select>
+            </div>
+          </div>
 
           <label for="custom-label">O etiqueta personalizada</label>
           <input
@@ -159,7 +171,7 @@
             aria-describedby="capture-label-help"
           >
           <p id="capture-label-help" class="help-text">
-            Si escribís una etiqueta personalizada, se usa esa etiqueta en lugar del catálogo. La etiqueta queda congelada al iniciar la grabación y viaja en el JSON descargado.
+            Elegí primero una categoría y después su palabra o frase para usar una etiqueta del catálogo. Si escribís una etiqueta personalizada, reemplaza la selección del catálogo y también permite grabar sin elegir categoría. La etiqueta queda congelada al iniciar la grabación y viaja en el JSON descargado.
           </p>
         </form>
 

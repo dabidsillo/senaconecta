@@ -12,8 +12,8 @@ Present category names with natural Spanish capitalization instead of uppercase 
 - TDD mode off per prior Tinku work; runner `node --test` and JS syntax checks. Mirror key `odd/tinku-capture-category-select/tasks`.
 
 ## Tasks
-- [ ] **CAPCAT-1 — Friendly category display.** Implement one formatter without changing canonical keys/IDs, apply to dictionary options, result badges/summary and lesson titles, update focused tests and public examples as needed. Confirm all 15 display correctly while lookups and metadata remain stable. Progress: in progress. Commit: pending.
-- [ ] **CAPCAT-2 — Dependent camera labels.** Add labeled camera category and sign/word selects using the shared catalog, reset sign on category change, retain custom label priority and frozen recording state, update helper/capture tests and public instructions. Progress: pending. Commit: pending.
+- [x] **CAPCAT-1 — Friendly category display.** `formatCategoryLabel` renders all 15 categories as sentence-case Spanish, including `Departamentos de Bolivia`; dictionary options, result badges/summary, lesson titles and the temporary flat capture labels use it. Canonical keys and stable IDs unchanged. Independent verifier observed 39/39 Node tests, catalog/app/lesson syntax and diff checks passed. Public examples update with CAPCAT-2. Progress: complete. Commit: `3a054f5` (`style: display friendly category names`).
+- [ ] **CAPCAT-2 — Dependent camera labels.** Add labeled camera category and sign/word selects using the shared catalog, reset sign on category change, retain custom label priority and frozen recording state, update helper/capture tests and public instructions. Progress: in progress. Commit: pending.
 - [ ] **CAPCAT-3 — Independent integration verification.** Run Node suite, syntax/diff/privacy checks and HTTP smoke on existing 8001 server, review duplicate Papá/Papa selection, disabled/ready recording state and no-video boundary; note browser manual camera and layout checks. Progress: pending. Commit: pending if verification changes tracked artifacts.
 
 ## Next step

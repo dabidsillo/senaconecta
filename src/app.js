@@ -53,6 +53,7 @@ const practiceTitle = document.querySelector('#practice-title');
 const practiceStatus = document.querySelector('#practice-status');
 const practiceCard = document.querySelector('#practice-card');
 const captureSupport = document.querySelector('#capture-support');
+const captureCategorySelect = document.querySelector('#capture-category');
 const catalogLabelSelect = document.querySelector('#catalog-label');
 const customLabelInput = document.querySelector('#custom-label');
 const cameraPreview = document.querySelector('#camera-preview');
@@ -402,7 +403,7 @@ function setCaptureStatus(message) {
 }
 
 function selectedCatalogEntry() {
-  return STARTER_CATALOG.find((entry) => entry.id === catalogLabelSelect.value) ?? null;
+  return resolveDictionaryEntry(captureCategorySelect.value, catalogLabelSelect.value);
 }
 
 function currentResolvedLabel() {
@@ -534,14 +535,32 @@ function resetRecordedPreview() {
   metadataPreview.textContent = '';
 }
 
-function renderCatalogLabelOptions() {
+function populateCatalogLabelOptions(entries) {
   clearChildren(catalogLabelSelect);
-  for (const entry of STARTER_CATALOG) {
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = entries.length > 0 ? 'Elegí una palabra o frase' : 'Primero elegí una categoría';
+  catalogLabelSelect.appendChild(placeholder);
+
+  for (const entry of entries) {
     const option = document.createElement('option');
     option.value = entry.id;
-    option.textContent = `${entry.displayLabel} — ${formatCategoryLabel(entry.category)}`;
+    option.textContent = entry.displayLabel;
     catalogLabelSelect.appendChild(option);
   }
+
+  catalogLabelSelect.disabled = entries.length === 0;
+}
+
+function renderCaptureCategoryOptions() {
+  for (const category of getDictionaryCategories()) {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = formatCategoryLabel(category);
+    captureCategorySelect.appendChild(option);
+  }
+
+  populateCatalogLabelOptions([]);
 }
 
 function initializeCaptureSupport() {
@@ -914,6 +933,12 @@ playCurrentVideoButton.addEventListener('click', async () => {
 
 startCameraButton.addEventListener('click', toggleCamera);
 startRecordingButton.addEventListener('click', toggleRecording);
+captureCategorySelect.addEventListener('change', () => {
+  const selection = changeDictionaryCategory(captureCategorySelect.value);
+  captureCategorySelect.value = selection.category;
+  populateCatalogLabelOptions(selection.entries);
+  syncCaptureButtons();
+});
 catalogLabelSelect.addEventListener('change', syncCaptureButtons);
 customLabelInput.addEventListener('input', syncCaptureButtons);
 function cleanupCaptureOnPageExit() {
@@ -937,6 +962,6 @@ window.addEventListener('beforeunload', cleanupCapture);
 renderLessons();
 renderPractice();
 renderDictionarySelectorCategories();
-renderCatalogLabelOptions();
+renderCaptureCategoryOptions();
 initializeCaptureSupport();
 renderResult('');

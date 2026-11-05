@@ -169,7 +169,7 @@ texto escrito → normalizeText → tokenizeText → lookupText → resultados r
 
 Si la persona escribe “Buenos días misterio”, el sistema reconoce la frase completa que está en el catálogo y conserva `misterio` como texto no encontrado. Este camino puede devolver más de una coincidencia para una forma ambigua, por ejemplo `papa`.
 
-Para elegir una sola entrada sin ambigüedad, el selector usa `src/dictionary-select.mjs`: primero carga las 15 categorías, luego habilita solo las palabras de la categoría elegida y finalmente resuelve la entrada por la pareja categoría + `id`. Así `Papá` de FAMILIA y `Papa` de VERDURAS siguen siendo selecciones independientes.
+Para elegir una sola entrada sin ambigüedad, el selector usa `src/dictionary-select.mjs`: primero carga las 15 categorías, luego habilita solo las palabras de la categoría elegida y finalmente resuelve la entrada por la pareja categoría + `id`. Así `Papá` de Familia y `Papa` de Verduras siguen siendo selecciones independientes.
 
 ## src/lessons.mjs: lecciones por categoría
 
@@ -306,15 +306,16 @@ El punto educativo es que el progreso no se guarda en una base de datos. Solo vi
 
 ```text
 1. La persona abre la sección Cámara.
-2. getCaptureSupport revisa si el navegador soporta cámara y grabación.
-3. startCamera pide permiso con navigator.mediaDevices.getUserMedia.
-4. La persona elige una etiqueta del catálogo o escribe una personalizada.
-5. startRecording congela esa etiqueta con freezeResolvedLabel.
-6. MediaRecorder graba un clip corto.
-7. finishRecording crea un Blob de video.
-8. buildCaptureMetadata crea el JSON descriptivo.
-9. URL.createObjectURL genera enlaces temporales.
-10. La persona descarga explícitamente video y JSON.
+2. Elige una categoría y después una palabra o frase de esa categoría, por ejemplo Familia → Papá.
+3. Si prefiere, escribe una etiqueta personalizada: funciona sin categoría y reemplaza la selección del catálogo.
+4. getCaptureSupport revisa si el navegador soporta cámara y grabación.
+5. startCamera pide permiso con navigator.mediaDevices.getUserMedia.
+6. startRecording congela esa etiqueta con freezeResolvedLabel.
+7. MediaRecorder graba un clip corto.
+8. finishRecording crea un Blob de video.
+9. buildCaptureMetadata crea el JSON descriptivo.
+10. URL.createObjectURL genera enlaces temporales.
+11. La persona descarga explícitamente video y JSON.
 ```
 
 Nada se sube automáticamente. Si la persona cierra la pestaña sin descargar, puede perder el clip.

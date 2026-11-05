@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { CATALOG_VERSION, STARTER_CATALOG } from '../src/catalog.mjs';
+import { resolveDictionaryEntry } from '../src/dictionary-select.mjs';
 import {
   DEFAULT_RECORDING_LIMIT_MS,
   DEFAULT_STOP_PENDING_TIMEOUT_MS,
@@ -149,13 +151,19 @@ test('streamHasAudioTracks detects whether MIME selection may declare audio', ()
   assert.equal(streamHasAudioTracks(null), false);
 });
 
-test('resolveCaptureLabel prefers an explicit custom label over catalog selection', () => {
+test('custom labels work without a category and take priority over a catalog selection', () => {
+  assert.deepEqual(resolveCaptureLabel({ customLabel: '  Seña nueva   de prueba  ' }), {
+    label: 'Seña nueva de prueba',
+    source: 'custom',
+    catalogId: null
+  });
+
   assert.deepEqual(resolveCaptureLabel({
     catalogId: 'daily-water',
     catalogLabel: 'Agua',
-    customLabel: '  Seña nueva   de prueba  '
+    customLabel: 'Etiqueta propia'
   }), {
-    label: 'Seña nueva de prueba',
+    label: 'Etiqueta propia',
     source: 'custom',
     catalogId: null
   });
@@ -174,16 +182,34 @@ test('normalizeCustomLabel bounds free text labels for metadata and filenames', 
   assert.equal(normalizeCustomLabel('x'.repeat(100)).length, 80);
 });
 
-test('freezeResolvedLabel snapshots a valid label for recording metadata', () => {
-  const source = { label: '  Agua  ', source: 'catalog', catalogId: 'daily-water' };
-  const frozen = freezeResolvedLabel(source);
-  source.label = 'Familia';
-
-  assert.deepEqual(frozen, {
-    label: 'Agua',
-    source: 'catalog',
-    catalogId: 'daily-water'
+test('freezeResolvedLabel preserves catalog metadata and keeps stopping available after selection changes', () => {
+  const father = STARTER_CATALOG.find((entry) => entry.category === 'FAMILIA' && entry.displayLabel === 'Papá');
+  assert.ok(father);
+  const frozen = freezeResolvedLabel(resolveCaptureLabel({
+    catalogId: father.id,
+    catalogLabel: father.displayLabel
+  }));
+  const changedSelection = resolveDictionaryEntry('VERDURAS', father.id);
+  const metadata = buildCaptureMetadata({
+    catalogVersion: CATALOG_VERSION,
+    resolvedLabel: frozen
   });
+
+  assert.equal(changedSelection, null);
+  assert.deepEqual(frozen, {
+    label: 'Papá',
+    source: 'catalog',
+    catalogId: father.id
+  });
+  assert.equal(metadata.label, 'Papá');
+  assert.equal(metadata.labelSource, 'catalog');
+  assert.equal(metadata.catalogId, father.id);
+  assert.deepEqual(getCaptureControlState({
+    captureIsSupported: true,
+    hasActiveStream: true,
+    isRecording: true,
+    labelIsReady: false
+  }).recording, { label: 'Detener clip', disabled: false });
   assert.equal(Object.isFrozen(frozen), true);
   assert.deepEqual(freezeResolvedLabel({ label: '', source: 'custom' }), {
     label: '',
