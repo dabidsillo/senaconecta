@@ -6,6 +6,7 @@ import {
   DEFAULT_RECORDING_LIMIT_MS,
   DEFAULT_STOP_PENDING_TIMEOUT_MS,
   buildCaptureMetadata,
+  buildSavedCaptureMetadata,
   chooseSupportedMimeType,
   createMetadataBlob,
   createSafeFileStem,
@@ -321,11 +322,23 @@ test('buildCaptureMetadata states capture purpose without claiming translation',
   assert.equal(metadata.purpose, 'training-and-evaluation-sample');
   assert.match(metadata.warning, /no es una traducción/);
   assert.equal(metadata.upload, 'none');
-  assert.equal(metadata.storage, 'browser-memory-until-explicit-download');
+  assert.equal(metadata.storage, 'browser-memory-until-explicit-save');
   assert.equal(metadata.durationMs, 1500);
 });
 
-test('createMetadataBlob serializes readable JSON metadata for explicit download', async () => {
+test('buildSavedCaptureMetadata marks a frozen browser-local copy without enabling uploads', () => {
+  const metadata = buildSavedCaptureMetadata({
+    label: 'Agua',
+    storage: 'browser-memory-until-explicit-save',
+    upload: 'none'
+  });
+
+  assert.equal(metadata.storage, 'browser-indexeddb-after-explicit-save');
+  assert.equal(metadata.upload, 'none');
+  assert.equal(Object.isFrozen(metadata), true);
+});
+
+test('createMetadataBlob serializes readable JSON metadata', async () => {
   const blob = createMetadataBlob({ label: 'Agua', upload: 'none' });
 
   assert.equal(blob.type, 'application/json');

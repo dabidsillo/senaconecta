@@ -251,9 +251,17 @@ export function buildCaptureMetadata({
     recordingLimitMs: Number.isFinite(recordingLimitMs) ? Math.max(0, Math.round(recordingLimitMs)) : 0,
     startedAt: startedAt instanceof Date ? startedAt.toISOString() : null,
     endedAt: endedAt instanceof Date ? endedAt.toISOString() : null,
-    storage: 'browser-memory-until-explicit-download',
+    storage: 'browser-memory-until-explicit-save',
     upload: 'none'
   };
+}
+
+export function buildSavedCaptureMetadata(metadata) {
+  return Object.freeze({
+    ...metadata,
+    storage: 'browser-indexeddb-after-explicit-save',
+    upload: 'none'
+  });
 }
 
 export function stopStreamTracks(stream) {

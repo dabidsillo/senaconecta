@@ -24,9 +24,8 @@ import {
   DEFAULT_RECORDING_LIMIT_MS,
   DEFAULT_STOP_PENDING_TIMEOUT_MS,
   buildCaptureMetadata,
+  buildSavedCaptureMetadata,
   chooseSupportedMimeType,
-  createMetadataBlob,
-  createSafeFileStem,
   freezeResolvedLabel,
   getCaptureControlState,
   getCaptureSupport,
@@ -37,6 +36,7 @@ import {
   stopStreamTracks,
   streamHasAudioTracks
 } from './capture.mjs';
+import { createCaptureStore } from './capture-store.mjs';
 
 const form = document.querySelector('#lookup-form');
 const input = document.querySelector('#lookup-input');
@@ -69,8 +69,9 @@ const recordedPlaceholder = document.querySelector('#recorded-placeholder');
 const startCameraButton = document.querySelector('#start-camera');
 const startRecordingButton = document.querySelector('#start-recording');
 const captureStatus = document.querySelector('#capture-status');
-const downloadVideoLink = document.querySelector('#download-video');
-const downloadMetadataLink = document.querySelector('#download-metadata');
+const saveRecordingButton = document.querySelector('#save-recording');
+const savedRecordingsStatus = document.querySelector('#saved-recordings-status');
+const savedRecordingsList = document.querySelector('#saved-recordings-list');
 const metadataPreview = document.querySelector('#metadata-preview');
 
 const beginnerLessons = buildBeginnerLessons(STARTER_CATALOG);
@@ -86,8 +87,17 @@ let recordingStartedAt = null;
 let recordingLimitTimer = null;
 let stopPendingTimer = null;
 let stopPendingSessionId = 0;
-let recordingObjectUrl = null;
-let metadataObjectUrl = null;
+let pendingPreviewObjectUrl = null;
+let savedPreviewObjectUrl = null;
+let pendingVideoBlob = null;
+let pendingMetadata = null;
+let pendingCaptureId = 0;
+let pendingClipSaved = false;
+let saveInProgress = false;
+let savedRecordings = [];
+let savedListRequestId = 0;
+let savedPreviewRequestId = 0;
+let selectedSavedRecordingId = null;
 let selectedMimeType = '';
 let recorderFailed = false;
 let activeRecordingLabel = null;
@@ -98,6 +108,7 @@ let captureIsSupported = false;
 let cameraRequestPending = false;
 let cameraRequestId = 0;
 let capturePageActive = true;
+const captureStore = createCaptureStore();
 
 function createElement(tagName, className, text) {
   const element = document.createElement(tagName);
@@ -553,30 +564,208 @@ function resetCameraPreview() {
   cameraPlaceholder.hidden = false;
 }
 
-function revokeCaptureUrls() {
-  if (recordingObjectUrl) {
-    URL.revokeObjectURL(recordingObjectUrl);
-    recordingObjectUrl = null;
-  }
-  if (metadataObjectUrl) {
-    URL.revokeObjectURL(metadataObjectUrl);
-    metadataObjectUrl = null;
+function revokePendingPreviewUrl() {
+  if (pendingPreviewObjectUrl) {
+    URL.revokeObjectURL(pendingPreviewObjectUrl);
+    pendingPreviewObjectUrl = null;
   }
 }
 
-function resetRecordedPreview() {
-  revokeCaptureUrls();
+function revokeSavedPreviewUrl() {
+  if (savedPreviewObjectUrl) {
+    URL.revokeObjectURL(savedPreviewObjectUrl);
+    savedPreviewObjectUrl = null;
+  }
+}
+
+function clearRecordedPreview() {
   recordedPreview.pause?.();
   recordedPreview.hidden = true;
   recordedPreview.removeAttribute('src');
   recordedPreview.load();
   recordedPlaceholder.hidden = false;
-  downloadVideoLink.hidden = true;
-  downloadVideoLink.removeAttribute('href');
-  downloadMetadataLink.hidden = true;
-  downloadMetadataLink.removeAttribute('href');
+}
+
+function syncSaveRecordingButton() {
+  saveRecordingButton.disabled = saveInProgress
+    || selectedSavedRecordingId !== null
+    || !pendingVideoBlob
+    || !pendingMetadata
+    || pendingClipSaved;
+}
+
+function invalidateSavedPreviewSelection() {
+  savedPreviewRequestId += 1;
+  selectedSavedRecordingId = null;
+  revokeSavedPreviewUrl();
+}
+
+function showPendingPreview() {
+  invalidateSavedPreviewSelection();
+  clearRecordedPreview();
+  if (!pendingVideoBlob || !pendingMetadata) {
+    metadataPreview.hidden = true;
+    metadataPreview.textContent = '';
+    syncSaveRecordingButton();
+    return;
+  }
+
+  revokePendingPreviewUrl();
+  pendingPreviewObjectUrl = URL.createObjectURL(pendingVideoBlob);
+  recordedPreview.src = pendingPreviewObjectUrl;
+  recordedPreview.hidden = false;
+  recordedPlaceholder.hidden = true;
+  metadataPreview.textContent = JSON.stringify(pendingMetadata, null, 2);
+  metadataPreview.hidden = false;
+  syncSaveRecordingButton();
+}
+
+function resetPendingCapture() {
+  pendingCaptureId += 1;
+  revokePendingPreviewUrl();
+  pendingVideoBlob = null;
+  pendingMetadata = null;
+  pendingClipSaved = false;
   metadataPreview.hidden = true;
   metadataPreview.textContent = '';
+  syncSaveRecordingButton();
+}
+
+function formatSavedRecording(entry) {
+  const label = entry.metadata?.label || 'Sin etiqueta';
+  const date = entry.createdAt ? new Date(entry.createdAt) : null;
+  const dateText = date && !Number.isNaN(date.valueOf())
+    ? date.toLocaleString('es-BO')
+    : 'fecha no disponible';
+  const sizeBytes = Number(entry.metadata?.sizeBytes) || 0;
+  return `${label} — ${dateText} — ${sizeBytes} bytes`;
+}
+
+function renderSavedRecordings() {
+  clearChildren(savedRecordingsList);
+  if (savedRecordings.length === 0) {
+    savedRecordingsStatus.textContent = 'No hay señas guardadas en este navegador todavía.';
+    return;
+  }
+
+  savedRecordingsStatus.textContent = `${savedRecordings.length} seña(s) guardada(s) solo en este navegador.`;
+  for (const entry of savedRecordings) {
+    const item = createElement('li', 'saved-recording');
+    item.appendChild(createElement('p', 'meta', formatSavedRecording(entry)));
+    const actions = createElement('div', 'saved-recording-actions');
+    const playButton = createElement('button', null, 'Reproducir');
+    playButton.type = 'button';
+    playButton.addEventListener('click', () => { void selectSavedRecording(entry.id); });
+    const deleteButton = createElement('button', 'delete-recording', 'Eliminar');
+    deleteButton.type = 'button';
+    deleteButton.addEventListener('click', () => { void deleteSavedRecording(entry.id); });
+    actions.append(playButton, deleteButton);
+    item.appendChild(actions);
+    savedRecordingsList.appendChild(item);
+  }
+}
+
+async function loadSavedRecordings() {
+  const requestId = savedListRequestId + 1;
+  savedListRequestId = requestId;
+  savedRecordingsStatus.textContent = 'Cargando señas guardadas localmente…';
+  try {
+    const entries = await captureStore.list();
+    if (requestId !== savedListRequestId) return;
+    savedRecordings = entries;
+    renderSavedRecordings();
+  } catch (error) {
+    if (requestId !== savedListRequestId) return;
+    savedRecordings = [];
+    clearChildren(savedRecordingsList);
+    savedRecordingsStatus.textContent = error?.code === 'unavailable'
+      ? 'El almacenamiento local no está disponible en este navegador.'
+      : 'No se pudieron leer las señas guardadas localmente.';
+  }
+}
+
+async function selectSavedRecording(id) {
+  const requestId = savedPreviewRequestId + 1;
+  savedPreviewRequestId = requestId;
+  selectedSavedRecordingId = id;
+  syncSaveRecordingButton();
+  setCaptureStatus('Cargando el clip guardado para reproducirlo localmente…');
+  try {
+    const entry = await captureStore.get(id);
+    if (requestId !== savedPreviewRequestId || selectedSavedRecordingId !== id) return;
+    if (!entry) {
+      setCaptureStatus('La seña seleccionada ya no está disponible. Actualizando la lista local.');
+      void loadSavedRecordings();
+      return;
+    }
+    revokeSavedPreviewUrl();
+    revokePendingPreviewUrl();
+    savedPreviewObjectUrl = URL.createObjectURL(entry.video);
+    recordedPreview.src = savedPreviewObjectUrl;
+    recordedPreview.hidden = false;
+    recordedPlaceholder.hidden = true;
+    metadataPreview.textContent = JSON.stringify(entry.metadata, null, 2);
+    metadataPreview.hidden = false;
+    setCaptureStatus(`Vista previa local lista para “${entry.metadata?.label || 'Sin etiqueta'}”.`);
+  } catch (error) {
+    if (requestId !== savedPreviewRequestId || selectedSavedRecordingId !== id) return;
+    setCaptureStatus(error?.code === 'unavailable'
+      ? 'El almacenamiento local no está disponible para reproducir esta seña.'
+      : 'No se pudo cargar la seña guardada localmente.');
+  }
+}
+
+async function deleteSavedRecording(id) {
+  const entry = savedRecordings.find((item) => item.id === id);
+  const label = entry?.metadata?.label || 'esta seña';
+  if (!window.confirm(`¿Eliminar “${label}” de este navegador? Esta acción no se puede deshacer.`)) return;
+
+  if (selectedSavedRecordingId === id) {
+    invalidateSavedPreviewSelection();
+    showPendingPreview();
+  }
+  try {
+    await captureStore.delete(id);
+    setCaptureStatus('La seña se eliminó de este navegador.');
+    await loadSavedRecordings();
+  } catch (error) {
+    setCaptureStatus(error?.code === 'unavailable'
+      ? 'El almacenamiento local no está disponible para eliminar esta seña.'
+      : 'No se pudo eliminar la seña guardada localmente.');
+  }
+}
+
+async function savePendingRecording() {
+  if (!pendingVideoBlob || !pendingMetadata || pendingClipSaved || saveInProgress) return;
+  const captureId = pendingCaptureId;
+  const video = pendingVideoBlob;
+  const metadata = buildSavedCaptureMetadata(pendingMetadata);
+  saveInProgress = true;
+  saveRecordingButton.disabled = true;
+  setCaptureStatus('Guardando la seña solo en este navegador…');
+  try {
+    await captureStore.save(video, metadata);
+    if (captureId === pendingCaptureId) {
+      pendingMetadata = metadata;
+      pendingClipSaved = true;
+      if (selectedSavedRecordingId === null) {
+        metadataPreview.textContent = JSON.stringify(metadata, null, 2);
+        setCaptureStatus('Seña guardada solo en este navegador. No se subió ni se agregó al catálogo.');
+      }
+    }
+    await loadSavedRecordings();
+  } catch (error) {
+    if (captureId === pendingCaptureId) {
+      setCaptureStatus(error?.code === 'quota-exceeded'
+        ? 'No hay espacio local suficiente para guardar esta seña. Eliminá otra seña o liberá espacio y reintentá.'
+        : error?.code === 'unavailable'
+          ? 'El almacenamiento local no está disponible para guardar esta seña. El clip sigue disponible para reintentar.'
+          : 'No se pudo guardar la seña localmente. El clip sigue disponible para reintentar.');
+    }
+  } finally {
+    saveInProgress = false;
+    syncSaveRecordingButton();
+  }
 }
 
 function populateCatalogLabelOptions(entries) {
@@ -625,7 +814,7 @@ function stopCamera() {
   activeStream = null;
   stopStreamTracks(stream);
   resetCameraPreview();
-  setCaptureStatus('Cámara detenida. Los clips ya preparados y sus descargas siguen disponibles.');
+  setCaptureStatus('Cámara detenida. La vista previa y las señas guardadas localmente siguen disponibles.');
   syncCaptureButtons();
 }
 
@@ -756,25 +945,11 @@ function finishRecording(sessionId, recorder) {
     endedAt,
     recordingLimitMs: DEFAULT_RECORDING_LIMIT_MS
   });
-  const fileStem = createSafeFileStem({ label: resolvedLabel.label, recordedAt: endedAt });
-  const metadataBlob = createMetadataBlob(metadata);
-
-  revokeCaptureUrls();
-  recordingObjectUrl = URL.createObjectURL(videoBlob);
-  metadataObjectUrl = URL.createObjectURL(metadataBlob);
-
-  recordedPreview.src = recordingObjectUrl;
-  recordedPreview.hidden = false;
-  recordedPlaceholder.hidden = true;
-  downloadVideoLink.href = recordingObjectUrl;
-  downloadVideoLink.download = `${fileStem}.${videoBlob.type.includes('mp4') ? 'mp4' : 'webm'}`;
-  downloadVideoLink.hidden = false;
-  downloadMetadataLink.href = metadataObjectUrl;
-  downloadMetadataLink.download = `${fileStem}.json`;
-  downloadMetadataLink.hidden = false;
-  metadataPreview.textContent = JSON.stringify(metadata, null, 2);
-  metadataPreview.hidden = false;
-  setCaptureStatus('Clip listo en memoria temporal. Descargá el video y el JSON; nada se subió ni quedó guardado permanentemente.');
+  resetPendingCapture();
+  pendingVideoBlob = videoBlob;
+  pendingMetadata = metadata;
+  showPendingPreview();
+  setCaptureStatus('Clip listo en memoria temporal. Elegí “Guardar seña” para conservarlo solo en este navegador.');
   recordedChunks = [];
   syncCaptureButtons();
 }
@@ -791,7 +966,9 @@ function startRecording() {
   }
 
   const recordingLabel = freezeResolvedLabel(resolvedLabel);
-  resetRecordedPreview();
+  invalidateSavedPreviewSelection();
+  resetPendingCapture();
+  clearRecordedPreview();
   recordedChunks = [];
   activeRecordingLabel = recordingLabel;
   selectedMimeType = chooseSupportedMimeType(MediaRecorder, { hasAudio: streamHasAudioTracks(activeStream) });
@@ -873,7 +1050,7 @@ function startRecording() {
 }
 
 function stopRecording() {
-  safeStopRecorder('Grabación detenida. Preparando vista previa y descargas explícitas.');
+  safeStopRecorder('Grabación detenida. Preparando vista previa local.');
 }
 
 function toggleRecording() {
@@ -899,8 +1076,10 @@ function cleanupCapture() {
   activeRecordingLabel = null;
   recorderFailed = false;
   resetCameraPreview();
-  resetRecordedPreview();
-  setCaptureStatus('Cámara y grabación cerradas. Los clips no descargados se descartaron al salir.');
+  invalidateSavedPreviewSelection();
+  resetPendingCapture();
+  clearRecordedPreview();
+  setCaptureStatus('Cámara y grabación cerradas. La vista previa temporal se descartó; las señas guardadas siguen en este navegador.');
   syncCaptureButtons();
 }
 
@@ -982,6 +1161,7 @@ playCurrentVideoButton.addEventListener('click', async () => {
 
 startCameraButton.addEventListener('click', toggleCamera);
 startRecordingButton.addEventListener('click', toggleRecording);
+saveRecordingButton.addEventListener('click', () => { void savePendingRecording(); });
 captureCategorySelect.addEventListener('change', () => {
   const selection = changeDictionaryCategory(captureCategorySelect.value);
   captureCategorySelect.value = selection.category;
@@ -1013,4 +1193,5 @@ renderPractice();
 renderDictionarySelectorCategories();
 renderCaptureCategoryOptions();
 initializeCaptureSupport();
+void loadSavedRecordings();
 renderResult('');

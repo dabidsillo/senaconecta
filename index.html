@@ -28,7 +28,7 @@
         <p>
           Este corte suma captura etiquetada con cámara al diccionario móvil y las lecciones iniciales sin backend.
           El catálogo incluido sirve para probar búsqueda, orden de resultados y práctica textual. La cámara solo graba
-          muestras que vos etiquetás y descargás; no valida señas, no inventa movimientos ni hace reconocimiento automático.
+          muestras que vos etiquetás y guardás de forma explícita en este navegador; no valida señas, no inventa movimientos ni hace reconocimiento automático.
         </p>
       </section>
     </header>
@@ -144,8 +144,8 @@
           <p class="eyebrow">Captura etiquetada</p>
           <h2 id="capture-title">Grabar clips para entrenamiento y evaluación futura</h2>
           <p>
-            Esta cámara no traduce señas ni hace reconocimiento automático. Solo graba clips que vos etiquetás y descargás
-            explícitamente para analizarlos después; no se suben archivos, no hay backend y no se usa almacenamiento persistente del navegador.
+            Esta cámara no traduce señas ni hace reconocimiento automático. Solo graba clips que vos etiquetás y guardás
+            explícitamente en este navegador; no se suben archivos, no hay backend, no hay analítica y los clips nunca se agregan al catálogo.
           </p>
         </div>
 
@@ -177,7 +177,7 @@
             aria-describedby="capture-label-help"
           >
           <p id="capture-label-help" class="help-text">
-            Elegí primero una categoría y después su palabra o frase para usar una etiqueta del catálogo. Si escribís una etiqueta personalizada, reemplaza la selección del catálogo y también permite grabar sin elegir categoría. La etiqueta queda congelada al iniciar la grabación y viaja en el JSON descargado.
+            Elegí primero una categoría y después su palabra o frase para usar una etiqueta del catálogo. Si escribís una etiqueta personalizada, reemplaza la selección del catálogo y también permite grabar sin elegir categoría. La etiqueta queda congelada al iniciar la grabación y se guarda junto al clip solo si elegís hacerlo.
           </p>
         </form>
 
@@ -194,16 +194,25 @@
           </div>
 
           <div class="camera-card">
-            <h3>Vista previa y descarga</h3>
+            <h3>Vista previa y guardado local</h3>
             <video id="recorded-preview" class="capture-video" controls preload="metadata" hidden></video>
-            <div id="recorded-placeholder" class="video-placeholder">Todavía no hay clip grabado para descargar.</div>
-            <div class="download-list">
-              <a id="download-video" class="download-button" download hidden>Descargar video</a>
-              <a id="download-metadata" class="download-button" download hidden>Descargar metadata JSON</a>
+            <div id="recorded-placeholder" class="video-placeholder">Todavía no hay clip grabado para guardar.</div>
+            <div class="save-actions">
+              <button id="save-recording" type="button" disabled>Guardar seña</button>
             </div>
+            <p class="help-text">Al guardar, el video y su etiqueta congelada quedan solo en IndexedDB de este navegador y dispositivo. No se comparten, no se suben ni pasan al catálogo. Antes de grabar a otra persona menor de edad, obtené consentimiento; el navegador puede borrar estos datos o rechazar el guardado por falta de espacio.</p>
             <pre id="metadata-preview" class="metadata-preview" hidden></pre>
           </div>
         </div>
+
+        <section class="saved-recordings" aria-labelledby="saved-recordings-title">
+          <div>
+            <p class="eyebrow">Solo este navegador</p>
+            <h3 id="saved-recordings-title">Señas guardadas localmente</h3>
+            <p id="saved-recordings-status" class="meta" role="status">Cargando señas guardadas localmente…</p>
+          </div>
+          <ul id="saved-recordings-list" class="saved-recordings-list" aria-live="polite"></ul>
+        </section>
       </section>
 
     </main>
