@@ -52,6 +52,7 @@ export function createPhraseSequencePlan(input, savedMetadataEntries, catalog = 
     : [];
   const result = lookupText(input, [...catalog, ...localEntries]);
   const sequence = [];
+  let unplayableCount = 0;
 
   for (const match of result.matches) {
     const playableCatalogEntries = match.entries.filter((entry) => !entry.localRecording && isPlayableCatalogEntry(entry));
@@ -82,13 +83,19 @@ export function createPhraseSequencePlan(input, savedMetadataEntries, catalog = 
         label: newestLocalRecording.label,
         position: sequence.length + 1
       });
+      continue;
     }
+
+    // Count each recognized occurrence that has neither a public video nor a
+    // metadata-only local fallback. Planning must not read media to decide this.
+    unplayableCount += 1;
   }
 
   return {
     originalText: result.originalText,
     tokens: result.tokens,
     unknown: result.unknown,
-    sequence
+    sequence,
+    unplayableCount
   };
 }

@@ -41,6 +41,8 @@ import { getLocalDictionaryViewState } from './local-dictionary-view.mjs';
 import { createLocalVideoLoader } from './local-video-loader.mjs';
 import { revealAndPlaySavedPreview } from './saved-playback.mjs';
 import { createPhrasePlaybackSession } from './phrase-playback.mjs';
+import { createPhraseSequencePlan } from './phrase-sequence-plan.mjs';
+import { createPhraseLocalSourceResolver } from './phrase-local-source.mjs';
 
 const form = document.querySelector('#lookup-form');
 const input = document.querySelector('#lookup-input');
@@ -86,7 +88,8 @@ let selectedLesson = beginnerLessons[0] ?? null;
 let practiceSession = selectedLesson ? createPracticeSession(selectedLesson) : null;
 let playbackSequence = [];
 const phrasePlayback = createPhrasePlaybackSession();
-let pendingPhraseSourcePause = '';
+let phraseLocalSource = null;
+let pendingPhraseSourcePause = false;
 let skippedVideoCount = 0;
 let activeStream = null;
 let mediaRecorder = null;
@@ -121,6 +124,7 @@ let cameraRequestPending = false;
 let cameraRequestId = 0;
 let capturePageActive = true;
 const captureStore = createCaptureStore();
+phraseLocalSource = createPhraseLocalSourceResolver({ get: (id) => captureStore.get(id) });
 const localVideoLoader = createLocalVideoLoader({
   get: (id) => captureStore.get(id),
   maxConcurrent: 2,
@@ -179,18 +183,39 @@ function currentPlaybackItem() {
   return playbackSequence[phrasePlayback.state.index];
 }
 
+function playbackItemLabel(item) {
+  return item?.kind === 'local' ? item.label : item?.entry?.displayLabel;
+}
+
 function setPlaybackStatus(message) {
   playbackStatus.textContent = message;
 }
 
-function disablePlayback(message) {
-  pendingPhraseSourcePause = '';
-  phrasePlayback.reset(0);
+function detachPhraseVideo() {
+  // A paused local step has no pause event to suppress. Mark only an active
+  // native playback pause so a later manual pause cannot be consumed instead.
+  if (phrasePlayback.state.running && !sequenceVideo.paused) pendingPhraseSourcePause = true;
   sequenceVideo.pause();
-  sequenceVideo.hidden = true;
   sequenceVideo.removeAttribute('src');
-  sequenceVideo.removeAttribute('aria-label');
   sequenceVideo.load();
+}
+
+function releasePhraseLocalSource(action = 'cancel') {
+  detachPhraseVideo();
+  const result = phraseLocalSource[action]();
+  if (action === 'dispose') {
+    phraseLocalSource = createPhraseLocalSourceResolver({ get: (id) => captureStore.get(id) });
+  }
+  return result;
+}
+
+function disablePlayback(message) {
+  pendingPhraseSourcePause = false;
+  releasePhraseLocalSource('reset');
+  phrasePlayback.reset(0);
+  playbackSequence = [];
+  sequenceVideo.hidden = true;
+  sequenceVideo.removeAttribute('aria-label');
   previousVideoButton.disabled = true;
   playCurrentVideoButton.disabled = true;
   nextVideoButton.disabled = true;
@@ -206,42 +231,60 @@ function syncPlaybackControls() {
 
   sequenceVideo.hidden = false;
   const { index } = phrasePlayback.state;
+  const label = playbackItemLabel(item);
   previousVideoButton.disabled = index <= 0;
   playCurrentVideoButton.disabled = false;
   nextVideoButton.disabled = index >= playbackSequence.length - 1;
 
-  if (sequenceVideo.getAttribute('src') !== item.source) {
-    if (phrasePlayback.state.running) {
-      pendingPhraseSourcePause = item.source;
-    }
+  if (item.kind === 'catalog' && sequenceVideo.getAttribute('src') !== item.source) {
+    releasePhraseLocalSource();
     sequenceVideo.src = item.source;
     sequenceVideo.load();
   }
 
-  sequenceVideo.setAttribute('aria-label', `Video ${index + 1} de ${playbackSequence.length}: ${item.entry.displayLabel}`);
+  sequenceVideo.setAttribute('aria-label', `Video ${index + 1} de ${playbackSequence.length}: ${label}`);
   const skippedMessage = skippedVideoCount > 0 ? ` Se omitieron ${skippedVideoCount} coincidencia(s) sin video.` : '';
-  setPlaybackStatus(`Video ${index + 1} de ${playbackSequence.length}: ${item.entry.displayLabel}.${skippedMessage}`);
+  if (item.kind === 'local') {
+    setPlaybackStatus(`Clip local sin validar ${index + 1} de ${playbackSequence.length}: ${label}. Se cargará solo al reproducir esta frase.${skippedMessage}`);
+    return;
+  }
+  setPlaybackStatus(`Video ${index + 1} de ${playbackSequence.length}: ${label}.${skippedMessage}`);
 }
 
-function preparePlayback(result) {
-  pendingPhraseSourcePause = '';
-  playbackSequence = getPlayableSequence(result.recognized);
+function prepareSearchPlayback(inputText, playbackInterruptionMessage = '') {
+  const plan = createPhraseSequencePlan(inputText, savedRecordings);
+  pendingPhraseSourcePause = false;
+  releasePhraseLocalSource('reset');
+  playbackSequence = plan.sequence;
+  phrasePlayback.reset(playbackSequence.length);
+  skippedVideoCount = plan.unplayableCount;
+
+  if (plan.tokens.length === 0) {
+    disablePlayback('No hay secuencia preparada. Los videos nunca se reproducen automáticamente.');
+  } else if (playbackSequence.length === 0) {
+    disablePlayback('No hay videos disponibles para esta búsqueda. Las entradas encontradas muestran estado pendiente.');
+  } else {
+    syncPlaybackControls();
+  }
+
+  if (playbackInterruptionMessage) setPlaybackStatus(playbackInterruptionMessage);
+}
+
+function prepareSelectedPlayback(result) {
+  pendingPhraseSourcePause = false;
+  releasePhraseLocalSource('reset');
+  playbackSequence = getPlayableSequence(result.recognized).map((item, index) => ({
+    kind: 'catalog',
+    ...item,
+    position: index + 1
+  }));
   phrasePlayback.reset(playbackSequence.length);
   skippedVideoCount = result.recognized.length - playbackSequence.length;
 
-  if (result.tokens.length === 0) {
-    disablePlayback('No hay secuencia preparada. Los videos nunca se reproducen automáticamente.');
-    return;
-  }
-
   if (playbackSequence.length === 0) {
-    const recognizedMessage = result.recognized.length > 0
-      ? 'Hay coincidencias textuales, pero ninguna tiene video cargado en este catálogo.'
-      : 'No hay videos porque no se encontró ninguna entrada del catálogo.';
-    disablePlayback(recognizedMessage);
+    disablePlayback('Hay coincidencias textuales, pero ninguna tiene video cargado en este catálogo.');
     return;
   }
-
   syncPlaybackControls();
 }
 
@@ -354,7 +397,7 @@ function renderLocalDictionaryResults(result) {
   }
 }
 
-function renderResult(inputText) {
+function renderResult(inputText, playbackInterruptionMessage = '', preservePhrasePlayback = false) {
   activeDictionaryMode = 'search';
   activeFreeTextQuery = inputText;
   const result = lookupWithLocalRecordings(inputText, savedRecordings);
@@ -372,15 +415,15 @@ function renderResult(inputText) {
       : resultSummary;
   }
 
-  preparePlayback(curatedResult);
+  if (!preservePhrasePlayback) prepareSearchPlayback(inputText, playbackInterruptionMessage);
   renderRecognized(curatedResult);
   renderUnknown(result);
   renderLocalDictionaryResults(result);
 }
 
-function refreshActiveFreeTextSearch() {
+function refreshActiveFreeTextSearch(playbackInterruptionMessage = '', preservePhrasePlayback = false) {
   if (activeDictionaryMode !== 'search') return;
-  renderResult(activeFreeTextQuery);
+  renderResult(activeFreeTextQuery, playbackInterruptionMessage, preservePhrasePlayback);
 }
 
 function renderSelectedDictionaryEntry(entry) {
@@ -395,7 +438,7 @@ function renderSelectedDictionaryEntry(entry) {
   };
 
   summary.textContent = `Término seleccionado: ${entry.displayLabel} (${formatCategoryLabel(entry.category)}). Esta es la entrada exacta elegida, no una búsqueda textual.`;
-  preparePlayback(result);
+  prepareSelectedPlayback(result);
   renderRecognized(result, true);
   renderUnknown(result);
 }
@@ -783,12 +826,12 @@ function renderSavedRecordings() {
   }
 }
 
-async function loadSavedRecordings() {
+async function loadSavedRecordings(playbackInterruptionMessage = '', preservePhrasePlayback = false) {
   const requestId = savedListRequestId + 1;
   savedListRequestId = requestId;
   localRecordingsLoading = true;
   localRecordingsUnavailable = false;
-  refreshActiveFreeTextSearch();
+  refreshActiveFreeTextSearch(playbackInterruptionMessage, preservePhrasePlayback);
   savedRecordingsStatus.textContent = 'Cargando señas guardadas localmente…';
   try {
     const entries = await captureStore.list();
@@ -797,7 +840,7 @@ async function loadSavedRecordings() {
     localRecordingsLoading = false;
     localRecordingsUnavailable = false;
     renderSavedRecordings();
-    refreshActiveFreeTextSearch();
+    refreshActiveFreeTextSearch(playbackInterruptionMessage, preservePhrasePlayback);
   } catch (error) {
     if (requestId !== savedListRequestId) return;
     savedRecordings = [];
@@ -807,7 +850,7 @@ async function loadSavedRecordings() {
     savedRecordingsStatus.textContent = error?.code === 'unavailable'
       ? 'El almacenamiento local no está disponible en este navegador.'
       : 'No se pudieron leer las señas guardadas localmente.';
-    refreshActiveFreeTextSearch();
+    refreshActiveFreeTextSearch(playbackInterruptionMessage, preservePhrasePlayback);
   }
 }
 
@@ -863,12 +906,35 @@ async function deleteSavedRecording(id) {
     invalidateSavedPreviewSelection();
     showPendingPreview();
   }
+  const deletedPhraseStep = playbackSequence.some((item) => item.kind === 'local' && item.recordingId === id);
+  const playbackInterruptionMessage = deletedPhraseStep
+    ? 'La reproducción ordenada se reinició porque se eliminó un clip local de la frase.'
+    : '';
+  if (deletedPhraseStep) {
+    releasePhraseLocalSource();
+    phrasePlayback.pause();
+    playbackSequence = [];
+    phrasePlayback.reset(0);
+    previousVideoButton.disabled = true;
+    playCurrentVideoButton.disabled = true;
+    nextVideoButton.disabled = true;
+  }
   clearLocalDictionaryVideos();
   try {
     await captureStore.delete(id);
+    savedRecordings = savedRecordings.filter((record) => record.id !== id);
+    // Rebuild the metadata-only phrase plan before refreshing storage so it
+    // cannot retain the deleted recording or its revoked Blob URL.
+    refreshActiveFreeTextSearch(playbackInterruptionMessage, !deletedPhraseStep);
     setCaptureStatus('La seña se eliminó de este navegador.');
-    await loadSavedRecordings();
+    await loadSavedRecordings(playbackInterruptionMessage, !deletedPhraseStep);
   } catch (error) {
+    // The delete did not happen; rebuild from the retained metadata after the
+    // cancelled request and URL cleanup above, without claiming it was removed.
+    const failedDeleteMessage = deletedPhraseStep
+      ? 'No se eliminó el clip local. La reproducción ordenada se reinició; podés volver a intentarlo.'
+      : '';
+    refreshActiveFreeTextSearch(failedDeleteMessage, !deletedPhraseStep);
     setCaptureStatus(error?.code === 'unavailable'
       ? 'El almacenamiento local no está disponible para eliminar esta seña.'
       : 'No se pudo eliminar la seña guardada localmente.');
@@ -1265,12 +1331,37 @@ nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
 lessonList.addEventListener('scroll', syncLessonGalleryControls, { passive: true });
 window.addEventListener('resize', syncLessonGalleryControls);
 
+function localPhraseFailure(item, result) {
+  phrasePlayback.error();
+  const label = playbackItemLabel(item);
+  if (result.kind === 'missing') {
+    setPlaybackStatus(`El clip local sin validar de ${label} ya no está disponible en este navegador. La frase se detuvo sin omitirlo.`);
+  } else if (result.kind === 'error' || result.cleanupError) {
+    setPlaybackStatus(`No se pudo preparar o limpiar el clip local sin validar de ${label} en este navegador. La frase se detuvo sin omitirlo.`);
+  }
+}
+
 async function playPhraseRequest(request) {
+  const item = currentPlaybackItem();
+  if (!item || !phrasePlayback.isCurrentRequest(request)) return;
+
+  if (item.kind === 'local') {
+    detachPhraseVideo();
+    const result = await phraseLocalSource.resolve(item.recordingId);
+    // The resolver invalidated this request already. Do not cancel again here:
+    // a later explicit request may now own the resolver and its one live URL.
+    if (!phrasePlayback.isCurrentRequest(request)) return;
+    if (result.kind !== 'ready') {
+      if (result.kind !== 'stale' || result.cleanupError) localPhraseFailure(item, result);
+      return;
+    }
+    sequenceVideo.src = result.source;
+    sequenceVideo.load();
+  }
+
   try {
     await sequenceVideo.play();
-    if (phrasePlayback.isCurrentRequest(request)) {
-      pendingPhraseSourcePause = '';
-    }
+    if (phrasePlayback.isCurrentRequest(request)) pendingPhraseSourcePause = false;
   } catch {
     if (phrasePlayback.rejectPlay(request).kind === 'blocked') {
       setPlaybackStatus('El navegador no pudo continuar la frase automáticamente. Usá los controles nativos o “Reproducir frase” para seguir.');
@@ -1285,37 +1376,37 @@ function startPhrasePlayback() {
   void playPhraseRequest(action.request);
 }
 
+function selectPhraseStep(index) {
+  phrasePlayback.select(index);
+  releasePhraseLocalSource();
+  syncPlaybackControls();
+}
+
 previousVideoButton.addEventListener('click', () => {
   const { index } = phrasePlayback.state;
-  if (index > 0) {
-    phrasePlayback.select(index - 1);
-    sequenceVideo.pause();
-    syncPlaybackControls();
-  }
+  if (index > 0) selectPhraseStep(index - 1);
 });
 
 nextVideoButton.addEventListener('click', () => {
   const { index } = phrasePlayback.state;
-  if (index < playbackSequence.length - 1) {
-    phrasePlayback.select(index + 1);
-    sequenceVideo.pause();
-    syncPlaybackControls();
-  }
+  if (index < playbackSequence.length - 1) selectPhraseStep(index + 1);
 });
 
 sequenceVideo.addEventListener('ended', () => {
   const action = phrasePlayback.ended();
   if (action.kind === 'next') {
+    releasePhraseLocalSource();
     syncPlaybackControls();
     void playPhraseRequest(action.request);
   } else if (action.kind === 'finished') {
+    releasePhraseLocalSource('dispose');
     setPlaybackStatus('Terminó la frase. Elegí “Reproducir frase” para volver al primer video.');
   }
 });
 
 sequenceVideo.addEventListener('pause', () => {
-  if (pendingPhraseSourcePause === currentPlaybackItem()?.source) {
-    pendingPhraseSourcePause = '';
+  if (pendingPhraseSourcePause) {
+    pendingPhraseSourcePause = false;
     return;
   }
   if (!sequenceVideo.ended && phrasePlayback.pause().kind === 'stopped') {
@@ -1324,10 +1415,14 @@ sequenceVideo.addEventListener('pause', () => {
 });
 
 sequenceVideo.addEventListener('error', () => {
-  phrasePlayback.error();
   const item = currentPlaybackItem();
-  const label = item?.entry?.displayLabel ?? 'seleccionado';
-  setPlaybackStatus(`No se pudo cargar o decodificar el video de ${label}. Probá otra entrada o revisá el archivo del catálogo.`);
+  phrasePlayback.error();
+  if (item?.kind === 'local') {
+    releasePhraseLocalSource();
+    setPlaybackStatus(`No se pudo cargar o decodificar el clip local sin validar de ${playbackItemLabel(item)}. La frase se detuvo sin omitirlo.`);
+    return;
+  }
+  setPlaybackStatus(`No se pudo cargar o decodificar el video de ${playbackItemLabel(item) ?? 'seleccionado'}. Probá otra entrada o revisá el archivo del catálogo.`);
 });
 
 playCurrentVideoButton.addEventListener('click', startPhrasePlayback);
@@ -1345,6 +1440,9 @@ catalogLabelSelect.addEventListener('change', syncCaptureButtons);
 customLabelInput.addEventListener('input', syncCaptureButtons);
 function cleanupCaptureOnPageExit() {
   clearLocalDictionaryVideos();
+  // Invalidate any pending local-Blob request before disposing its resolver.
+  phrasePlayback.pause();
+  releasePhraseLocalSource('dispose');
   capturePageActive = false;
   cameraRequestId += 1;
   cameraRequestPending = false;

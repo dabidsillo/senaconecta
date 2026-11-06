@@ -55,6 +55,21 @@ test('orders duplicate local recordings by createdAt, then id, then original lis
   assert.equal(invalidOnlyPlan.sequence[0].recordingId, 'a-first');
 });
 
+test('counts each placeholder occurrence without a playable public or local fallback', () => {
+  const mixedCatalog = [
+    { id: 'playable', label: 'mixed', aliases: [], videoPath: 'videos/mixed.webm' },
+    { id: 'placeholder', label: 'mixed', aliases: [], videoPath: '' },
+    { id: 'missing', label: 'missing', aliases: [], videoPath: '   ' }
+  ];
+
+  const plan = createPhraseSequencePlan('mixed missing missing', [], mixedCatalog);
+
+  assert.deepEqual(steps(plan), [{
+    kind: 'catalog', token: 'mixed', source: 'videos/mixed.webm', recordingId: undefined, position: 1
+  }]);
+  assert.equal(plan.unplayableCount, 2);
+});
+
 test('preserves repeated occurrences and recognizes custom-only multiword local phrases', () => {
   const plan = createPhraseSequencePlan('hola hola mi seña especial', [
     { id: 'phrase', metadata: { label: 'Mi seña especial' }, createdAt: '2025-01-01' }

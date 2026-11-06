@@ -58,6 +58,8 @@ Al elegir una entrada, por ejemplo Familia → Papá, aparece su video del catá
 
 Si ya guardaste un clip y buscás su etiqueta por texto, puede aparecer una zona azul separada llamada **Mis señas**. Cada tarjeta tiene controles nativos de video para reproducir su propio clip; el navegador prepara los clips cercanos de forma diferida. Cada uno sigue siendo local y sin validar: no se agrega al catálogo, no cambia las categorías, ni vuelve correcta una seña. Si la misma etiqueta existe en el catálogo, se muestran por separado el resultado con video del catálogo y cada clip local.
 
+Al elegir **Reproducir frase**, la frase sigue el orden escrito. Solo en ese momento puede usar como respaldo el clip local más reciente de una etiqueta exacta que no tenga video público reproducible; un video público siempre tiene prioridad. Ese clip local no se lee durante la búsqueda y sigue sin validar. Si falta, el almacenamiento falla o el navegador no puede decodificarlo, la frase se detiene y no salta a otra seña.
+
 ### 2. Lecciones
 
 Deslizá horizontalmente las tarjetas o usá **Anterior** y **Siguiente**. Elegí una categoría y respondé la práctica textual. Si recargás la página, el avance se reinicia porque vive solamente en la memoria de esa pestaña. Eso es intencional: no hay cuenta ni perfil.
