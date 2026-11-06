@@ -398,6 +398,8 @@ select {
 }
 
 .sign-card,
+.local-sign-card,
+.local-dictionary-panel,
 .lesson-card,
 .unknown-panel,
 .playback-panel,
@@ -410,6 +412,8 @@ select {
 }
 
 .sign-card,
+.local-sign-card,
+.local-dictionary-panel,
 .lesson-card,
 .unknown-panel,
 .playback-panel,
@@ -419,6 +423,8 @@ select {
 }
 
 .sign-card,
+.local-sign-card,
+.local-dictionary-panel,
 .playback-panel,
 .lesson-card,
 .practice-panel,
@@ -455,6 +461,44 @@ select {
 .badge {
   background: #f7e2c0;
   color: var(--brand-strong);
+}
+
+.local-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  background: #e4edf9;
+  color: #184e85;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.local-dictionary-panel {
+  border-color: #9eb8d5;
+  background: #f4f8ff;
+}
+
+.local-dictionary-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.local-sign-card {
+  border-color: #c9d9ec;
+  background: rgb(255 255 255 / 80%);
+}
+
+.local-play-button {
+  justify-self: start;
+  background: #245d96;
+  padding: 0 1.1rem;
+}
+
+.local-play-button:hover,
+.local-play-button:focus-visible {
+  background: #184e85;
 }
 
 .status-pill {

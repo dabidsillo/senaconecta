@@ -2,8 +2,7 @@ import {
   CATALOG_VERSION,
   STARTER_CATALOG,
   formatCategoryLabel,
-  getPlayableSequence,
-  lookupText
+  getPlayableSequence
 } from './catalog.mjs';
 import {
   changeDictionaryCategory,
@@ -37,6 +36,8 @@ import {
   streamHasAudioTracks
 } from './capture.mjs';
 import { createCaptureStore } from './capture-store.mjs';
+import { lookupWithLocalRecordings } from './local-recordings-search.mjs';
+import { getLocalDictionaryViewState } from './local-dictionary-view.mjs';
 import { revealAndPlaySavedPreview } from './saved-playback.mjs';
 
 const form = document.querySelector('#lookup-form');
@@ -45,6 +46,10 @@ const summary = document.querySelector('#summary');
 const recognizedList = document.querySelector('#recognized-list');
 const unknownPanel = document.querySelector('#unknown-panel');
 const unknownList = document.querySelector('#unknown-list');
+const localDictionaryPanel = document.querySelector('#local-dictionary-panel');
+const localDictionaryStatus = document.querySelector('#local-dictionary-status');
+const localDictionaryList = document.querySelector('#local-dictionary-list');
+const localDictionaryVideo = document.querySelector('#local-dictionary-video');
 const exampleButtons = document.querySelectorAll('[data-example]');
 const dictionaryCategorySelect = document.querySelector('#dictionary-category');
 const dictionaryWordSelect = document.querySelector('#dictionary-word');
@@ -99,6 +104,13 @@ let savedRecordings = [];
 let savedListRequestId = 0;
 let savedPreviewRequestId = 0;
 let selectedSavedRecordingId = null;
+let localDictionaryPreviewObjectUrl = null;
+let localDictionaryPreviewRequestId = 0;
+let selectedLocalDictionaryRecordingId = null;
+let activeDictionaryMode = 'search';
+let activeFreeTextQuery = '';
+let localRecordingsLoading = false;
+let localRecordingsUnavailable = false;
 let selectedMimeType = '';
 let recorderFailed = false;
 let activeRecordingLabel = null;
@@ -254,23 +266,126 @@ function renderUnknown(result) {
   }
 }
 
+function revokeLocalDictionaryPreviewUrl() {
+  if (localDictionaryPreviewObjectUrl) {
+    URL.revokeObjectURL(localDictionaryPreviewObjectUrl);
+    localDictionaryPreviewObjectUrl = null;
+  }
+}
+
+function clearLocalDictionaryPreview() {
+  localDictionaryPreviewRequestId += 1;
+  selectedLocalDictionaryRecordingId = null;
+  localDictionaryVideo.pause?.();
+  localDictionaryVideo.hidden = true;
+  localDictionaryVideo.removeAttribute('src');
+  localDictionaryVideo.load();
+  revokeLocalDictionaryPreviewUrl();
+}
+
+function renderLocalDictionaryResults(result) {
+  const state = getLocalDictionaryViewState({
+    tokens: result.tokens,
+    localRecognized: result.localRecognized,
+    loading: localRecordingsLoading,
+    unavailable: localRecordingsUnavailable
+  });
+  localDictionaryPanel.hidden = !state.visible;
+  clearChildren(localDictionaryList);
+  localDictionaryStatus.textContent = state.message;
+
+  for (const match of state.matches) {
+    const card = createElement('article', 'local-sign-card');
+    const header = createElement('div', 'card-header');
+    const titleGroup = createElement('div');
+    titleGroup.appendChild(createElement('h4', null, match.label));
+    titleGroup.appendChild(createElement('p', 'meta', `Coincidencia local: ${match.token}`));
+    header.appendChild(titleGroup);
+    header.appendChild(createElement('span', 'local-badge', 'Local, sin validar'));
+    card.appendChild(header);
+    card.appendChild(createElement('p', 'unavailable', 'Este clip fue guardado por vos en este navegador. No forma parte del catálogo ni valida una seña LSB.'));
+    const playButton = createElement('button', 'local-play-button', 'Reproducir clip local');
+    playButton.type = 'button';
+    playButton.addEventListener('click', () => { void playLocalDictionaryRecording(match.id, match.label); });
+    card.appendChild(playButton);
+    localDictionaryList.appendChild(card);
+  }
+}
+
+async function playLocalDictionaryRecording(id, label) {
+  clearLocalDictionaryPreview();
+  const requestId = localDictionaryPreviewRequestId + 1;
+  localDictionaryPreviewRequestId = requestId;
+  selectedLocalDictionaryRecordingId = id;
+  localDictionaryStatus.textContent = 'Cargando el clip local para reproducirlo…';
+  try {
+    const entry = await captureStore.get(id);
+    if (requestId !== localDictionaryPreviewRequestId || selectedLocalDictionaryRecordingId !== id) return;
+    if (!entry) {
+      localDictionaryStatus.textContent = 'El clip ya no está disponible. Actualizando las señas guardadas.';
+      void loadSavedRecordings();
+      return;
+    }
+    revokeLocalDictionaryPreviewUrl();
+    localDictionaryPreviewObjectUrl = URL.createObjectURL(entry.video);
+    localDictionaryVideo.src = localDictionaryPreviewObjectUrl;
+    localDictionaryVideo.hidden = false;
+    localDictionaryVideo.setAttribute('aria-label', `Clip local sin validar: ${label}`);
+    localDictionaryStatus.textContent = `Clip local “${label}” listo. Iniciando reproducción…`;
+    const playback = await revealAndPlaySavedPreview(localDictionaryVideo);
+    if (requestId !== localDictionaryPreviewRequestId || selectedLocalDictionaryRecordingId !== id) return;
+    if (playback.outcome === 'playing') {
+      localDictionaryStatus.textContent = `Reproduciendo localmente “${label}”.`;
+    } else if (playback.outcome === 'blocked') {
+      localDictionaryStatus.textContent = `No se pudo iniciar “${label}” automáticamente. Usá los controles del video para reproducirlo.`;
+    } else if (playback.outcome === 'unsupported') {
+      localDictionaryStatus.textContent = `Este navegador no admite el formato de “${label}”. Probá los controles del video o un navegador compatible.`;
+    } else {
+      localDictionaryStatus.textContent = `No se pudo iniciar “${label}” automáticamente. El clip sigue disponible en los controles del video.`;
+    }
+  } catch (error) {
+    if (requestId !== localDictionaryPreviewRequestId || selectedLocalDictionaryRecordingId !== id) return;
+    localDictionaryStatus.textContent = error?.code === 'unavailable'
+      ? 'El almacenamiento local no está disponible para reproducir esta seña.'
+      : 'No se pudo cargar el clip local. Probá de nuevo o usá la lista de señas guardadas.';
+  }
+}
+
 function renderResult(inputText) {
-  const result = lookupText(inputText);
-  const recognizedCount = result.recognized.length;
+  activeDictionaryMode = 'search';
+  activeFreeTextQuery = inputText;
+  clearLocalDictionaryPreview();
+  const result = lookupWithLocalRecordings(inputText, savedRecordings);
+  const curatedResult = { ...result, recognized: result.curatedRecognized };
+  const curatedCount = result.curatedRecognized.length;
+  const localCount = result.localRecognized.length;
   const unknownCount = result.unknown.length;
 
   if (result.tokens.length === 0) {
     summary.textContent = `Catálogo ${CATALOG_VERSION}: ${STARTER_CATALOG.length} etiquetas disponibles para búsqueda textual.`;
   } else {
-    summary.textContent = `${recognizedCount} palabra(s) reconocida(s) y ${unknownCount} sin coincidencia, respetando el orden escrito.`;
+    const resultSummary = `${curatedCount} palabra(s) del catálogo, ${localCount} seña(s) local(es) y ${unknownCount} sin coincidencia, respetando el orden escrito.`;
+    summary.textContent = localRecordingsLoading
+      ? `Resultados provisorios mientras se buscan señas guardadas: ${resultSummary}`
+      : resultSummary;
   }
 
-  preparePlayback(result);
-  renderRecognized(result);
+  preparePlayback(curatedResult);
+  renderRecognized(curatedResult);
   renderUnknown(result);
+  renderLocalDictionaryResults(result);
+}
+
+function refreshActiveFreeTextSearch() {
+  if (activeDictionaryMode !== 'search') return;
+  renderResult(activeFreeTextQuery);
 }
 
 function renderSelectedDictionaryEntry(entry) {
+  activeDictionaryMode = 'selection';
+  activeFreeTextQuery = '';
+  clearLocalDictionaryPreview();
+  localDictionaryPanel.hidden = true;
   const result = {
     tokens: [entry.label],
     recognized: [{ token: entry.displayLabel, entry }],
@@ -669,19 +784,28 @@ function renderSavedRecordings() {
 async function loadSavedRecordings() {
   const requestId = savedListRequestId + 1;
   savedListRequestId = requestId;
+  localRecordingsLoading = true;
+  localRecordingsUnavailable = false;
+  refreshActiveFreeTextSearch();
   savedRecordingsStatus.textContent = 'Cargando señas guardadas localmente…';
   try {
     const entries = await captureStore.list();
     if (requestId !== savedListRequestId) return;
     savedRecordings = entries;
+    localRecordingsLoading = false;
+    localRecordingsUnavailable = false;
     renderSavedRecordings();
+    refreshActiveFreeTextSearch();
   } catch (error) {
     if (requestId !== savedListRequestId) return;
     savedRecordings = [];
+    localRecordingsLoading = false;
+    localRecordingsUnavailable = true;
     clearChildren(savedRecordingsList);
     savedRecordingsStatus.textContent = error?.code === 'unavailable'
       ? 'El almacenamiento local no está disponible en este navegador.'
       : 'No se pudieron leer las señas guardadas localmente.';
+    refreshActiveFreeTextSearch();
   }
 }
 
@@ -737,8 +861,14 @@ async function deleteSavedRecording(id) {
     invalidateSavedPreviewSelection();
     showPendingPreview();
   }
+  if (selectedLocalDictionaryRecordingId === id) {
+    clearLocalDictionaryPreview();
+  }
   try {
     await captureStore.delete(id);
+    if (selectedLocalDictionaryRecordingId === id) {
+      clearLocalDictionaryPreview();
+    }
     setCaptureStatus('La seña se eliminó de este navegador.');
     await loadSavedRecordings();
   } catch (error) {
@@ -1184,6 +1314,7 @@ captureCategorySelect.addEventListener('change', () => {
 catalogLabelSelect.addEventListener('change', syncCaptureButtons);
 customLabelInput.addEventListener('input', syncCaptureButtons);
 function cleanupCaptureOnPageExit() {
+  clearLocalDictionaryPreview();
   capturePageActive = false;
   cameraRequestId += 1;
   cameraRequestPending = false;

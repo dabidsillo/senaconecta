@@ -4,6 +4,8 @@ Tinku is a mobile-first Spanish prototype for exploring textual vocabulary, prac
 
 The dictionary search and practice are temporary: search does not store queries, and practice restarts after a reload. A recorded clip is different: after recording, use **Guardar seña** explicitly to save the clip and its frozen label in IndexedDB for this browser origin. Saved clips remain available after reloads in that same browser until you delete them or the browser evicts its storage. You can play or delete each saved clip from the local list.
 
+During a free-text dictionary search, matching saved labels appear separately under **Mis señas**. That panel is browser-local and explicitly unvalidated: its clips do not change the public 45-item catalog, category/word selectors, or lessons. A matching catalog label still appears as its catalog placeholder, while each locally saved clip remains a distinct playable result.
+
 No video or JSON files are downloaded. Tinku does not create accounts, use a backend, upload clips, or automatically promote a saved clip into the catalog. It does not translate signs, recognize movement, or validate a sign.
 
 **Student guide (no programming required): [docs/guia-para-estudiantes.md](docs/guia-para-estudiantes.md).** **Learn the page block by block in Spanish: [docs/codigo-html-paso-a-paso.md](docs/codigo-html-paso-a-paso.md).** Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). Defense guide: [docs/guia-de-defensa.md](docs/guia-de-defensa.md).
@@ -51,7 +53,7 @@ Get appropriate consent before recording anyone, especially minors. Do not proje
 
 ## Catalog, videos, lessons, and capture
 
-The dictionary selector, free-text search, and lessons all read `src/catalog.mjs`. Search is independent of exact category selection and can recognize catalog phrases such as `Lo siento` or `Santa Cruz`. Current labels are placeholders only: none has a linked or public video because every `videoPath` is `null`.
+The dictionary selector and lessons read only `src/catalog.mjs`. Free-text search can also match saved recording metadata in the separate **Mis señas** panel, without loading local video data until you choose its playback button. Search is independent of exact category selection and can recognize catalog phrases such as `Lo siento` or `Santa Cruz`. Current labels are placeholders only: none has a linked or public video because every `videoPath` is `null`.
 
 Lessons are generated from the shared categories. Practice state exists only in JavaScript memory for the current tab, so refreshing or closing the page loses it by design. Saved recordings are separate browser-local data and can remain after a reload.
 

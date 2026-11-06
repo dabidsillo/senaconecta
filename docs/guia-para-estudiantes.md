@@ -56,6 +56,8 @@ Elegí una categoría y una etiqueta, por ejemplo **Familia → Papá**. Tambié
 
 Si aparece “Video no disponible”, explicá la verdad: todas las entradas actuales tienen `videoPath: null`. No hay video vinculado, publicado ni revisado para mostrar. No inventes una seña ni digas que un resultado fue validado por LSB.
 
+Si ya guardaste un clip y buscás su etiqueta por texto, puede aparecer una zona separada llamada **Mis señas**. Allí cada clip dice que es local y sin validar: se puede reproducir dentro del Diccionario, pero no se agrega al catálogo, no cambia las categorías, ni vuelve correcta una seña. Si la misma etiqueta existe en el catálogo, se muestran por separado el marcador del catálogo y cada clip local.
+
 ### 2. Lecciones
 
 Deslizá horizontalmente las tarjetas o usá **Anterior** y **Siguiente**. Elegí una categoría y respondé la práctica textual. Si recargás la página, el avance se reinicia porque vive solamente en la memoria de esa pestaña. Eso es intencional: no hay cuenta ni perfil.
@@ -64,7 +66,7 @@ Deslizá horizontalmente las tarjetas o usá **Anterior** y **Siguiente**. Eleg�
 
 Usala solo si querés mostrar la captura. Elegí, por ejemplo, `Familia` y `Papá`, o escribí una etiqueta propia; después permití la cámara. El clip dura como máximo 15 segundos. Cuando termina, primero aparece una vista previa temporal. Elegí **Guardar seña** solo si querés conservarlo.
 
-Al guardar, el clip y su etiqueta quedan en IndexedDB del mismo navegador y origen. Recargar no lo borra normalmente: aparece en la lista para **Reproducir** o **Eliminar**. No se sube, no se descarga como video o JSON y no pasa al catálogo.
+Al guardar, el clip y su etiqueta quedan en IndexedDB del mismo navegador y origen. Recargar no lo borra normalmente: aparece en la lista para **Reproducir** o **Eliminar** y, cuando coincide con una búsqueda libre, en **Mis señas** dentro del Diccionario. No se sube, no se descarga como video o JSON y no pasa al catálogo.
 
 No es una copia portable: otro dominio, navegador, perfil, computadora o dispositivo no la recibe. El navegador puede rechazar el guardado por falta de espacio o borrar datos por sus reglas de privacidad, al limpiar datos del sitio o por evicción de almacenamiento. Pedí consentimiento antes de grabar a otra persona, especialmente si es menor de edad.
 

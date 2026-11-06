@@ -104,7 +104,18 @@
             </div>
           </section>
 
-          <div id="recognized-list" class="card-grid" aria-label="Resultados reconocidos"></div>
+          <div id="recognized-list" class="card-grid" aria-label="Resultados del catálogo"></div>
+
+          <section id="local-dictionary-panel" class="local-dictionary-panel" aria-labelledby="local-dictionary-title" hidden>
+            <div>
+              <p class="eyebrow">Mis señas</p>
+              <h3 id="local-dictionary-title">Clips guardados solo en este navegador</h3>
+              <p id="local-dictionary-status" class="meta" role="status" aria-live="polite"></p>
+            </div>
+            <p class="unavailable">Estos clips son locales y sin validar: no forman parte del catálogo ni confirman una seña LSB.</p>
+            <video id="local-dictionary-video" class="entry-video" controls preload="metadata" tabindex="-1" hidden></video>
+            <div id="local-dictionary-list" class="local-dictionary-list" aria-label="Coincidencias de señas guardadas"></div>
+          </section>
 
           <div id="unknown-panel" class="unknown-panel" hidden>
             <h3>Palabras no encontradas</h3>
