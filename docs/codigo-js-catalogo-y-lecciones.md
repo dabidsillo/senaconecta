@@ -1,6 +1,6 @@
 # JavaScript: catálogo, diccionario y lecciones
 
-Este recorrido explica cómo Tinku organiza etiquetas de texto y responde a acciones de la página. No traduce ni reconoce señas: usa el catálogo público de palabras y frases.
+Este recorrido explica cómo Tinku organiza etiquetas de texto, videos de catálogo y acciones de la página. No traduce ni reconoce señas. Las 45 rutas actuales llevan a WebM VP8 cuya revisión LSB y permiso de publicación fueron declarados por la persona propietaria; esta herramienta no los verificó lingüísticamente ni hay un despliegue real. **Mis señas** es distinto: contiene solo clips que cada persona guardó localmente en su navegador, sin validación y sin subida al catálogo.
 
 ## Mapa rápido
 
@@ -17,9 +17,9 @@ galería: botones y eventos ──────────┴──> desplazamie
 - Una `function` es una receta con nombre. `if` decide según una condición y `return` entrega un resultado.
 - Un **evento** es algo que ocurre en la página: enviar, hacer clic, desplazar o cambiar tamaño.
 
-## 1. Un catálogo compartido, sin videos inventados
+## 1. Un catálogo compartido, con videos declarados por su propietario
 
-`src/catalog.mjs` convierte las categorías y sus listas en `STARTER_CATALOG`: 45 entradas de texto en 9 categorías. La misma lista alimenta diccionario, búsqueda y lecciones.
+`src/catalog.mjs` convierte las categorías y sus listas en `STARTER_CATALOG`: 45 entradas en 9 categorías. La misma lista alimenta diccionario, búsqueda y lecciones, y cada entrada enlaza un WebM VP8 del catálogo.
 
 **`src/catalog.mjs` — extracto exacto**
 
@@ -31,16 +31,16 @@ function createEntry(category, displayLabel) {
     displayLabel,
     category,
     aliases: Object.freeze([]),
-    description: 'Vocabulario provisto por usuarios; seña y video pendientes de validación.',
-    videoPath: null,
-    validationStatus: 'placeholder'
+    description: 'Video disponible. La revisión LSB y la autorización de publicación fueron declaradas por la persona propietaria; no constituyen una verificación lingüística independiente.',
+    videoPath: `./assets/catalog/${stableId(category, displayLabel)}.webm`,
+    validationStatus: 'owner-attested-review'
   });
 }
 ```
 
 **Omisión explícita:** arriba está `stableId` y debajo se crea toda la lista; no se muestran para mirar una entrada a la vez.
 
-`Object.freeze` evita cambios accidentales. `displayLabel` es el texto visible y `label` es la forma preparada para buscar. El `id` combina categoría y etiqueta para identificar la entrada. `videoPath: null` significa que no hay ruta de video: no confirma una seña LSB ni oculta un video validado.
+`Object.freeze` evita cambios accidentales. `displayLabel` es el texto visible y `label` es la forma preparada para buscar. El `id` combina categoría y etiqueta para identificar la entrada. `videoPath` construye una ruta relativa a un WebM VP8; `owner-attested-review` registra la declaración de revisión y permiso de publicación de la persona propietaria, no una verificación lingüística independiente. Los archivos están versionados para un futuro sitio, pero no hay despliegue real.
 
 `export const STARTER_CATALOG` comparte la array con otros módulos. Su creación recorre cada categoría y cada etiqueta para llamar a `createEntry`.
 
@@ -49,7 +49,7 @@ function createEntry(category, displayLabel) {
 1. Abrí Diccionario, elegí una categoría y luego una palabra o frase.
 2. Mirá su nombre, categoría y estado de video.
 
-**Resultado esperado:** aparece una entrada textual; no una reproducción ni una validación de señas.
+**Resultado esperado:** aparece la entrada y su reproductor WebM; al usar los controles se intenta reproducir el video del catálogo. Esto no valida independientemente la seña ni prueba un despliegue.
 
 ## 2. Búsqueda: normalizar y preferir frases largas
 
@@ -99,7 +99,7 @@ function renderResult(inputText) {
   const result = lookupText(inputText);
 ```
 
-Al enviar, el evento toma lo escrito y llama a `renderResult`; esta llama a `lookupText`. Después el resultado se dibuja creando nodos y usando `textContent`, así el texto ingresado no se interpreta como HTML. Los videos solo se preparan desde rutas declaradas; con `videoPath: null` no hay video para reproducir.
+Al enviar, el evento toma lo escrito y llama a `renderResult`; esta llama a `lookupText`. Después el resultado se dibuja creando nodos y usando `textContent`, así el texto ingresado no se interpreta como HTML. Los videos solo se preparan desde rutas declaradas. Si una futura entrada no tuviera `videoPath`, queda el estado genérico sin video; las 45 entradas actuales sí tienen ruta.
 
 ### Probalo: frase y desconocida
 
@@ -141,7 +141,7 @@ dictionaryWordSelect.addEventListener('change', () => {
 
 `addEventListener('change', ...)` espera un cambio. El `if` atiende una selección vacía y el `return` evita continuar. Si hay entrada, `renderSelectedDictionaryEntry` muestra esa elección exacta, no ejecuta una búsqueda textual.
 
-El dibujo de resultados crea nodos y pone etiquetas con `textContent`; por eso el texto ingresado no se interpreta como HTML. El catálogo actual tiene `videoPath: null`, de modo que no hay video para reproducir.
+El dibujo de resultados crea nodos y pone etiquetas con `textContent`; por eso el texto ingresado no se interpreta como HTML. Al seleccionar una entrada actual, `renderSelectedDictionaryEntry` prepara su video WebM y `renderRecognized` agrega un reproductor con controles.
 
 ### Probalo: dos selecciones exactas
 

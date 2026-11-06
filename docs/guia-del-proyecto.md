@@ -2,7 +2,7 @@
 
 Esta guía explica cómo está construido el MVP de Tinku, qué problema intenta resolver y qué decisiones técnicas tomó el proyecto. Está escrita para una estudiante o un estudiante que recién empieza con HTML, CSS y JavaScript.
 
-> Idea central: esta aplicación funciona en el navegador, sin servidor propio, sin cuentas y sin traducción automática de señas. Muestra 45 etiquetas textuales en 9 categorías, organiza lecciones y permite grabar clips etiquetados para revisión futura.
+> Idea central: esta aplicación funciona en el navegador, sin servidor propio, sin cuentas y sin traducción automática de señas. Muestra 45 entradas en 9 categorías con videos WebM VP8 declarados revisados y publicables por su propietario, organiza lecciones y permite grabar clips etiquetados para revisión futura. No hay despliegue real ni verificación lingüística independiente de esta herramienta.
 
 ## Ruta rápida para entender el proyecto
 
@@ -22,7 +22,7 @@ Tinku busca ser una base escolar simple para explorar vocabulario de Lengua de S
 - lecciones iniciales por categoría;
 - captura de videos etiquetados para análisis o entrenamiento futuro.
 
-El MVP no afirma que las entradas sean señas válidas. El catálogo actual reúne 45 palabras y frases provistas para 9 categorías, con estados `placeholder`. Por eso la interfaz muestra estados como “Video no disponible” cuando no hay una grabación revisada.
+El catálogo actual reúne 45 palabras y frases para 9 categorías, cada una con una ruta WebM VP8 y estado `owner-attested-review`. Ese estado registra que la persona propietaria declaró revisión LSB y autorización de publicación; no es una verificación lingüística independiente. Al elegir una entrada, la interfaz muestra su reproductor. “Video no disponible” queda como respaldo genérico si alguna entrada futura no tiene archivo.
 
 ## Qué no hace este MVP
 
@@ -34,7 +34,8 @@ Este punto es importante para defender el proyecto con honestidad técnica:
 - No tiene backend ni login; IndexedDB guarda clips solo después de que la persona lo pide.
 - No sube videos a internet.
 - No conserva progreso después de recargar la página.
-- No agrega videos privados al repositorio.
+- No sube clips locales ni agrega automáticamente Mis señas al catálogo.
+- No afirma un despliegue real ni verificación lingüística independiente de los videos del catálogo.
 
 La cámara solo graba clips etiquetados. La persona elige si guarda cada clip localmente con **Guardar seña**; la etiqueta es contexto para revisión futura, no una prueba de reconocimiento.
 
@@ -147,14 +148,14 @@ export const CATALOG_VERSION = 'final-vocabulary-v3';
 
 Cada entrada tiene datos como `id`, `label`, `displayLabel`, `category`, `description`, `videoPath` y `validationStatus`.
 
-La decisión importante es que las entradas actuales usan:
+Las entradas actuales usan una ruta relativa generada y el estado siguiente:
 
 ```js
-videoPath: null,
-validationStatus: 'placeholder'
+videoPath: `./assets/catalog/${stableId(category, displayLabel)}.webm`,
+validationStatus: 'owner-attested-review'
 ```
 
-Eso evita afirmar que ya hay videos validados. Cuando `videoPath` es `null`, la interfaz debe mostrar “Video no disponible”.
+Las 45 rutas apuntan a WebM VP8. El estado significa que la persona propietaria declaró revisión LSB y autorización de publicación; no equivale a validación lingüística independiente ni a que el sitio esté desplegado. Cuando una entrada futura tenga `videoPath` vacío, la interfaz muestra “Video no disponible”.
 
 Funciones clave:
 
@@ -288,7 +289,7 @@ Funciones útiles para estudiar:
 5. Se devuelven reconocidos y desconocidos.
 6. app.js dibuja tarjetas y palabras no encontradas.
 7. getPlayableSequence deja pasar solo entradas con videoPath.
-8. Si no hay videos, la UI muestra estado pendiente en lugar de inventar señas.
+8. Para las entradas actuales, la UI prepara su video WebM; si falta una ruta en una entrada futura, muestra estado pendiente en lugar de inventar señas.
 ```
 
 Este flujo demuestra separación de responsabilidades: el catálogo decide qué datos existen; la interfaz decide cómo mostrarlos.
@@ -329,27 +330,13 @@ El punto educativo es que el progreso no se guarda en una base de datos. Solo vi
 
 Nada se sube. Si la persona cierra la pestaña sin guardar, pierde la vista previa temporal. Un clip guardado puede persistir al recargar el mismo origen y perfil, hasta que se borre manualmente o el navegador lo elimine; no se sincroniza entre dispositivos.
 
-## Cómo agregar manualmente un video revisado
+## Videos de catálogo y clips locales
 
-El proyecto no incluye videos privados en Git. La carpeta local `/videos/` está ignorada por [.gitignore](../.gitignore).
+Las 45 entradas actuales enlazan archivos WebM VP8 versionados en `assets/catalog/`; no son clips privados de la cámara. La persona propietaria declaró que fueron revisados para LSB y autorizados para publicación. Esta herramienta no verificó esa revisión de manera independiente, y tener los archivos en el proyecto no significa que haya un sitio desplegado.
 
-Proceso recomendado:
+Para demostrar la experiencia, ejecutá el sitio local, elegí una categoría y una palabra —por ejemplo, Familia → Papá— y usá los controles del reproductor. `src/app.js` carga solo la ruta declarada por `src/catalog.mjs`; no inventa movimientos. Si alguna ruta futura falta, conserva el aviso genérico “Video no disponible”.
 
-1. Ejecutá el sitio en `http://localhost:8000`.
-2. Conseguí el archivo de video por un proceso separado y autorizado; **Guardar seña** no ofrece exportarlo ni publicarlo.
-3. Revisá el clip con una persona competente en LSB y confirmá permiso para el uso previsto.
-4. Copiá manualmente ese archivo revisado dentro de `videos/`.
-5. Abrí [src/catalog.mjs](../src/catalog.mjs).
-6. Cambiá el `videoPath` de la entrada correspondiente, por ejemplo:
-
-```js
-videoPath: 'videos/hola-revisado.webm'
-```
-
-7. Recargá la página y buscá esa palabra.
-8. Probá que el video se vea en el diccionario y en la reproducción ordenada.
-
-No cambies `validationStatus` ni textos de validez sin revisión real. Los videos privados ignorados por Git no aparecen en un sitio desplegado: se necesitan permiso y configuración de publicación por separado. Ningún video está enlazado hoy.
+**Mis señas** es otra cosa: son clips que una persona graba y decide guardar en IndexedDB de su propio navegador. No se suben, no se exportan automáticamente, no cambian `videoPath`, no se agregan al catálogo y siguen sin validación. Antes de usar un nuevo video en catálogo, corresponde un proceso humano autorizado; no cambies `validationStatus` ni textos de validez por inferencia.
 
 ## Decisiones y tradeoffs del proyecto
 
@@ -359,8 +346,8 @@ No cambies `validationStatus` ni textos de validez sin revisión real. Los video
 | Sin login | Menos complejidad y menos datos personales. | No hay perfiles ni historial por estudiante. |
 | Práctica sin persistencia | No registra avance del estudiante. | El progreso se pierde al recargar. |
 | Guardado local y explícito de clips | Video y metadata reaparecen al recargar el mismo origen. | El navegador puede rechazar o borrar datos; no hay copias de respaldo ni sincronización. |
-| Catálogo placeholder | Permite desarrollar UI sin inventar autoridad lingüística. | Todavía falta validación real de contenido. |
-| Videos privados ignorados | Evita publicar material sensible por accidente. | Un sitio publicado no tendrá esos videos automáticamente. |
+| Catálogo con declaración del propietario | Permite reproducir 45 WebM sin presentar la declaración como certificación. | Falta verificación lingüística independiente y no hay despliegue real. |
+| Mis señas locales | Evita subir clips personales por accidente. | No integra esos clips al catálogo ni los vuelve válidos. |
 | Pruebas sobre funciones puras | Rápidas y fáciles de correr en Node. | No reemplazan pruebas manuales de navegador y cámara. |
 | Cámara con guardado explícito | La persona decide si conserva cada clip. | No exporta archivos y requiere consentimiento, espacio local y navegador compatible. |
 
@@ -377,7 +364,7 @@ Qué cubren:
 - [tests/catalog.test.mjs](../tests/catalog.test.mjs): normalización, tokens, búsqueda, categorías y videos disponibles.
 - [tests/lessons.test.mjs](../tests/lessons.test.mjs): creación de lecciones, avance y finalización de práctica.
 - [tests/capture.test.mjs](../tests/capture.test.mjs): soporte de cámara, MIME, etiquetas, metadata, nombres de archivo y limpieza de tracks.
-- [tests/dictionary-select.test.mjs](../tests/dictionary-select.test.mjs): las 9 categorías, el reinicio al cambiar categoría, la resolución exacta y el estado sin videos.
+- [tests/dictionary-select.test.mjs](../tests/dictionary-select.test.mjs): las 9 categorías, el reinicio al cambiar categoría, la resolución exacta y las rutas de video declaradas por el propietario.
 - [tests/capture-store.test.mjs](../tests/capture-store.test.mjs): operaciones de guardado local simuladas, colisiones, errores y abortos.
 
 Estas pruebas no abren una cámara real ni prueban IndexedDB del navegador. Hace falta una prueba manual en navegador antes de afirmar esa integración.
@@ -415,8 +402,8 @@ No hace falta dominar todos los archivos en una sola sesión. Una primera pasada
 **1. ¿Dónde está la lista de palabras del diccionario?**  
 En [src/catalog.mjs](../src/catalog.mjs), dentro de `STARTER_CATALOG`.
 
-**2. ¿Por qué las entradas actuales tienen `videoPath: null`?**  
-Porque no hay videos revisados asociados. La aplicación debe mostrar un estado pendiente, no inventar señas.
+**2. ¿Qué significa `owner-attested-review` en las entradas actuales?**
+Que la persona propietaria declaró revisión LSB y permiso de publicación para los 45 WebM; la herramienta no lo verificó independientemente.
 
 **3. ¿Qué archivo conecta los botones del HTML con la lógica JavaScript?**  
 [src/app.js](../src/app.js), porque consulta elementos del DOM y registra eventos.
@@ -438,4 +425,4 @@ Que la grabación no fue subida por la aplicación a ningún servidor.
 
 ## Resumen final
 
-Tinku es un MVP de navegador que separa bien sus piezas: HTML para estructura, CSS para presentación, módulos JavaScript para lógica y pruebas Node para reglas puras. Sus decisiones favorecen privacidad, claridad y honestidad: no hay backend, no hay login, solo hay persistencia local por elección para clips, y no hay reconocimiento de señas sin evidencia futura.
+Tinku es un MVP de navegador que separa bien sus piezas: HTML para estructura, CSS para presentación, módulos JavaScript para lógica y pruebas Node para reglas puras. Sus decisiones favorecen privacidad, claridad y honestidad: no hay backend ni login, los 45 WebM del catálogo se basan en declaración de su propietario sin verificación independiente, Mis señas persiste solo por elección local y no hay reconocimiento de señas ni despliegue real.

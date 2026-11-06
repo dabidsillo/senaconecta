@@ -74,7 +74,7 @@ Esta guía te deja leer la página real de Tinku sin saber programar. **HTML org
 - **Qué significa:** `maxlength="160"` limita el texto. `aria-describedby` conecta la caja con su ayuda. `aria-live="polite"` comunica resultados nuevos a tecnologías de asistencia sin interrumpir de golpe.
 - **Qué pasa al usarlo:** al enviar, [src/app.js](../src/app.js) busca texto en el catálogo y actualiza `summary`, resultados reconocidos y palabras no encontradas. El HTML solo reserva y nombra esos lugares.
 
-**Límite real:** el panel también contiene `sequence-video` y botones de reproducción, pero el catálogo actual no tiene videos cargados y validados: las entradas usan `videoPath: null`. Por eso puede verse “Video no disponible”; Tinku no inventa movimientos ni reproduce videos automáticamente.
+**Experiencia real y límite:** el panel contiene `sequence-video` y botones de reproducción. Las 45 entradas del catálogo enlazan WebM VP8 publicables; la persona propietaria declaró revisadas las señas y autorizada su publicación. Esa declaración no es una verificación lingüística independiente de esta herramienta y el proyecto **no está desplegado**. Al elegir una palabra del catálogo, por ejemplo Familia → Papá, aparece su video y se puede reproducir con los controles. El aviso genérico “Video no disponible” sigue siendo el respaldo para una entrada que llegue sin archivo; Tinku no inventa movimientos ni reproduce automáticamente.
 
 ## 4. Lecciones, galería y práctica
 
@@ -130,7 +130,7 @@ Esta guía te deja leer la página real de Tinku sin saber programar. **HTML org
 
 ## Probá y observá
 
-1. Elegí **Familia** y luego **Papá**. **Resultado esperado:** se muestra una entrada textual exacta; si buscás video, se informa que no está disponible, no aparece una seña inventada.
+1. Elegí **Familia** y luego **Papá**. **Resultado esperado:** se muestra la entrada exacta y su video WebM del catálogo; podés usar sus controles. La herramienta no verifica independientemente la seña ni publica el sitio.
 2. Con Tab, llegá a **Saltar a la búsqueda** o a la galería de lecciones. **Resultado esperado:** se ve el foco y el salto/galería se puede usar con teclado; los rótulos ayudan a identificar los controles.
 
 ## Para seguir

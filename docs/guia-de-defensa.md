@@ -4,11 +4,11 @@ Esta guía te ayuda a defender el MVP ante un jurado mixto. Usala junto con [doc
 
 ## Mensaje central
 
-Tinku es una aplicación de navegador para explorar 45 etiquetas textuales en 9 categorías, practicar por categorías y guardar opcionalmente clips cortos etiquetados de forma local. No reconoce señas, no usa inteligencia artificial, no publica videos, no sube archivos ni guarda datos en un servidor.
+Tinku es una aplicación de navegador para explorar 45 entradas en 9 categorías, practicar por categorías y guardar opcionalmente clips cortos etiquetados de forma local. No reconoce señas, no usa inteligencia artificial, no sube archivos locales ni guarda datos en un servidor.
 
 La frase más importante para decir con honestidad es esta:
 
-> Todas las entradas actuales tienen `videoPath: null` y `validationStatus: 'placeholder'`. La aplicación no enlaza ni publica videos de señas de personas creadoras; una etiqueta del catálogo no prueba una seña LSB validada.
+> Las 45 entradas actuales enlazan videos WebM VP8 del catálogo con `validationStatus: 'owner-attested-review'`. La persona propietaria declaró su revisión LSB y autorización de publicación; esta herramienta no hizo verificación lingüística independiente. Los archivos son publicables, pero no existe un despliegue real todavía.
 
 ## Catálogo para demostrar
 
@@ -29,9 +29,9 @@ La frase más importante para decir con honestidad es esta:
 1. **Problema.** “Un proyecto escolar de lengua de señas puede exagerar fácilmente lo que hace. Este MVP propone una base pequeña y honesta.”
 2. **Solución.** “La aplicación corre en el navegador. Permite elegir una etiqueta exacta con categoría y palabra, buscar texto o frases, practicar las 9 categorías y, con permiso, grabar un clip etiquetado.”
 3. **Persistencia local.** “Buscar y practicar son temporales. Cuando termina una grabación, puedo elegir **Guardar seña**: ese clic guarda el clip solo en IndexedDB de este navegador y origen. Luego puedo reproducirlo o eliminarlo.”
-4. **Demostración.** “Voy a seleccionar `Familia → Papá`, buscar `Santa Cruz` y mostrar una práctica. Si uso cámara, mostraré un clip de menos de 15 segundos y su guardado local.”
-5. **Límites.** “No hay backend, cuentas, IA, reconocimiento automático, subida de archivos ni validación lingüística. El clip no se agrega al catálogo y no se descarga como video o JSON.”
-6. **Siguiente paso responsable.** “Antes de asociar videos a etiquetas, haría falta revisión de contenido con personas competentes en LSB. No afirmaré que hoy haya videos alojados o publicados.”
+4. **Demostración.** “Voy a seleccionar `Familia → Papá` y reproducir su video de catálogo, buscar `Santa Cruz` y mostrar una práctica. Si uso cámara, mostraré un clip de menos de 15 segundos y su guardado local.”
+5. **Límites.** “No hay backend, cuentas, IA, reconocimiento automático, subida de archivos locales ni verificación lingüística independiente. El clip de Mis señas no se agrega al catálogo y no se descarga como video o JSON.”
+6. **Siguiente paso responsable.** “Los 45 videos fueron declarados revisados y publicables por su propietario, pero no diré que la herramienta los verificó ni que el sitio ya está desplegado.”
 
 ## Checklist de demo en la interfaz real
 
@@ -46,9 +46,9 @@ Luego abrí `http://localhost:8000`. Evitá `file://` porque puede bloquear mód
 ### 1. Diccionario y búsqueda textual
 
 - [ ] Entrá a **Diccionario**.
-- [ ] Elegí `Familia` y después `Papá`; explicá que esa selección muestra exactamente esa etiqueta.
+- [ ] Elegí `Familia` y después `Papá`; explicá que esa selección muestra exactamente esa etiqueta y su reproductor WebM.
 - [ ] Usá los ejemplos sugeridos `Hola, mamá`, `Lo siento, papá` y `Por favor, amigo`; señalá que `amigo` queda como palabra no encontrada.
-- [ ] Mostrá “Video no disponible”. Explicá que `videoPath` es `null`, no que un video esté roto o escondido.
+- [ ] Reproducí el video de catálogo con sus controles. Explicá que la revisión y el permiso fueron declarados por la persona propietaria, no verificados independientemente por esta herramienta.
 
 ### 2. Práctica por categorías
 
@@ -82,13 +82,13 @@ Pedí consentimiento antes de activar la cámara y antes de conservar o mostrar 
 | No hay cámara | Saltá la grabación y explicá `src/capture.mjs` con la UI visible. | “La cámara es opcional; la app debe seguir explicándose sin capturar datos.” |
 | El navegador bloquea cámara | Confirmá que estás en `localhost`; si sigue fallando, no fuerces permisos. | “El navegador protege cámara por permisos y contexto seguro.” |
 | No se puede guardar | No fuerces intentos repetidos; explicá cuota, privacidad o falta de IndexedDB. | “El almacenamiento es local y depende de las reglas y espacio del navegador.” |
-| No hay video de catálogo | Mostrá “Video no disponible”. | “Es correcto: todas las rutas actuales son `null`; no fingimos reproducción.” |
+| Un archivo de catálogo falta o no carga | Mostrá el aviso “Video no disponible” o el error del reproductor. | “Ese es el respaldo genérico para un activo ausente; las 45 rutas actuales del catálogo apuntan a WebM.” |
 | No abre con `file://` | Usá el servidor Python local. | “Python solo sirve archivos; la app sigue siendo del navegador.” |
 | Node no ejecuta pruebas | Revisá que el comando se corra desde la raíz del repo. | “Node se usa para pruebas automáticas, no para servir la aplicación final.” |
 
 ## Preguntas probables y respuestas cortas
 
-**¿La aplicación enseña LSB de forma validada?** No todavía. Muestra 45 etiquetas textuales en 9 categorías; las entradas son placeholder, no señas LSB validadas.
+**¿La aplicación enseña LSB de forma validada?** Muestra 45 videos cuya revisión LSB fue declarada por su propietario. La herramienta no realizó una verificación lingüística independiente ni mide aprendizaje.
 
 **¿Reconoce una seña desde la cámara?** No. La cámara solo graba un clip etiquetado para vista previa y guardado local opcional.
 
@@ -98,13 +98,13 @@ Pedí consentimiento antes de activar la cámara y antes de conservar o mostrar 
 
 **¿Se guarda una grabación?** Solo si la persona pulsa **Guardar seña**. Puede seguir disponible tras recargar en el mismo navegador y origen, hasta que se elimine o el navegador borre el almacenamiento.
 
-**¿Los videos ya son LSB validados o públicos?** No. `videoPath: null` significa que no hay video vinculado en el catálogo actual. No hay evidencia para afirmar alojamiento, publicación o lanzamiento.
+**¿Los videos ya son LSB validados o públicos?** Las 45 rutas WebM están vinculadas al catálogo y la persona propietaria declaró revisión y permiso de publicación. No hay despliegue real y la herramienta no verificó lingüísticamente esos videos.
 
 ## Para jurado técnico
 
-**¿Dónde está el catálogo?** En [src/catalog.mjs](../src/catalog.mjs). Ahí están las 45 entradas, `videoPath: null` y `validationStatus: 'placeholder'`.
+**¿Dónde está el catálogo?** En [src/catalog.mjs](../src/catalog.mjs). Ahí están las 45 entradas, sus rutas relativas `./assets/catalog/<id>.webm` y `validationStatus: 'owner-attested-review'`.
 
-**¿Cómo se evita inventar videos?** `getPlayableSequence` en [src/catalog.mjs](../src/catalog.mjs) solo acepta `videoPath` no vacío. Como hoy todos son `null`, [src/app.js](../src/app.js) muestra estados pendientes.
+**¿Cómo se evita inventar videos?** `getPlayableSequence` en [src/catalog.mjs](../src/catalog.mjs) solo acepta `videoPath` no vacío. [src/app.js](../src/app.js) prepara la secuencia y el reproductor para las rutas actuales; mantiene el estado genérico pendiente para una entrada futura sin ruta.
 
 **¿Cómo se guarda un clip?** [src/app.js](../src/app.js) llama a `captureStore.save` solo después del clic explícito. [src/capture-store.mjs](../src/capture-store.mjs) guarda el Blob y la metadata en IndexedDB; lista metadata y lee el Blob al reproducirlo.
 
@@ -117,10 +117,10 @@ Pedí consentimiento antes de activar la cámara y antes de conservar o mostrar 
 - No afirmes mejora de aprendizaje porque no hay medición con estudiantes.
 - No afirmes compatibilidad con todos los navegadores; cámara, grabación e IndexedDB dependen del navegador y dispositivo.
 - No digas que hay IA, reconocimiento automático o traducción de señas.
-- No presentes las etiquetas placeholder como señas oficiales o validadas.
-- No prometas alojamiento, publicación o lanzamiento de videos.
+- No presentes la declaración del propietario como verificación lingüística independiente ni como certificación oficial.
+- No prometas alojamiento, publicación o lanzamiento: los videos son publicables, pero no hay despliegue real.
 - No presentes el almacenamiento local como respaldo permanente ni como mecanismo de compartir archivos.
 
 ## Cierre recomendado
 
-“Mi defensa no es que el proyecto ya resuelve toda la enseñanza de LSB. Mi defensa es que el MVP construye una base clara y verificable: catálogo textual, búsqueda, práctica temporal, captura opcional y guardado local explícito. El siguiente paso responsable es validar contenido con personas competentes antes de asociar videos o investigar reconocimiento automático.”
+“Mi defensa no es que el proyecto ya resuelve toda la enseñanza de LSB. El MVP ofrece catálogo con 45 WebM declarados revisados y publicables por su propietario, búsqueda, práctica temporal, captura opcional y guardado local explícito. No hubo verificación lingüística independiente ni despliegue; Mis señas sigue siendo local y sin validar.”

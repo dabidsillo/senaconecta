@@ -4,7 +4,7 @@ Esta guía te ayuda a mostrar Tinku aunque no programes. No tenés que memorizar
 
 ## Guion breve para decir en voz alta
 
-> Tinku es un prototipo para explorar vocabulario en texto, practicar por categorías y, si quiero, grabar un clip corto con cámara. Tiene 45 etiquetas en 9 categorías. La búsqueda y la práctica son temporales: la práctica vuelve a empezar si recargo. Si grabo un clip, puedo elegir **Guardar seña** para conservarlo en este navegador; después lo puedo reproducir o eliminar. Tinku no reconoce señas, no traduce, no sube archivos y no confirma que un clip sea una seña LSB validada.
+> Tinku es un prototipo para explorar vocabulario, practicar por categorías y, si quiero, grabar un clip corto con cámara. Tiene 45 entradas en 9 categorías, cada una con un video WebM VP8 del catálogo. La persona propietaria declaró revisadas las señas y autorizada su publicación; esta herramienta no hizo una verificación lingüística independiente y no hay un despliegue real. La práctica vuelve a empezar si recargo. Si grabo un clip, puedo elegir **Guardar seña** para conservarlo solo en este navegador; después lo puedo reproducir o eliminar. Tinku no reconoce señas, no traduce ni sube esos clips.
 
 ## El catálogo que se puede mostrar
 
@@ -25,11 +25,11 @@ Esta guía te ayuda a mostrar Tinku aunque no programes. No tenés que memorizar
 | Sí hace | No hace |
 | --- | --- |
 | Busca etiquetas de texto y permite elegir categoría y palabra. | No reconoce movimientos ni traduce señas a texto. |
-| Organiza 45 etiquetas en 9 categorías. | No prueba que una etiqueta sea una seña LSB validada. |
+| Organiza 45 entradas con videos WebM VP8 en 9 categorías. | No verifica independientemente que un video sea una seña LSB válida ni afirma despliegue real. |
 | Propone práctica textual por categoría. | No guarda el avance de práctica al recargar o cerrar la página. |
 | Graba, si das permiso, clips de hasta 15 segundos. | No descarga video ni JSON, no sube clips y no crea cuentas. |
 | Guarda un clip solo al pulsar **Guardar seña**. | No lo agrega automáticamente al catálogo ni lo comparte. |
-| Permite reproducir o eliminar los clips guardados. | No incluye ni enlaza videos de señas de personas creadoras. |
+| Permite reproducir o eliminar los clips guardados. | No agrega esos clips de Mis señas al catálogo ni los valida. |
 
 ## La idea del código: partes, aspecto y acciones
 
@@ -54,9 +54,9 @@ El último enlace conserva su nombre para no romper la ruta; en la interfaz actu
 
 Elegí una categoría y una etiqueta, por ejemplo **Familia → Papá**. También podés usar los ejemplos sugeridos `Hola, mamá`, `Lo siento, papá` y `Por favor, amigo`; `amigo` muestra cómo se ve una palabra que no está en el catálogo. La búsqueda no interpreta una seña hecha con las manos ni guarda lo que escribís.
 
-Si aparece “Video no disponible”, explicá la verdad: todas las entradas actuales tienen `videoPath: null`. No hay video vinculado, publicado ni revisado para mostrar. No inventes una seña ni digas que un resultado fue validado por LSB.
+Al elegir una entrada, por ejemplo Familia → Papá, aparece su video del catálogo y podés usar los controles para reproducirlo. Los 45 WebM tienen revisión LSB y permiso de publicación declarados por la persona propietaria; no digas que esta herramienta lo verificó independientemente ni que el sitio ya está desplegado. “Video no disponible” sigue siendo un respaldo genérico si falta un archivo.
 
-Si ya guardaste un clip y buscás su etiqueta por texto, puede aparecer una zona separada llamada **Mis señas**. Allí cada clip dice que es local y sin validar: se puede reproducir dentro del Diccionario, pero no se agrega al catálogo, no cambia las categorías, ni vuelve correcta una seña. Si la misma etiqueta existe en el catálogo, se muestran por separado el marcador del catálogo y cada clip local.
+Si ya guardaste un clip y buscás su etiqueta por texto, puede aparecer una zona separada llamada **Mis señas**. Allí cada clip dice que es local y sin validar: se puede reproducir dentro del Diccionario, pero no se agrega al catálogo, no cambia las categorías, ni vuelve correcta una seña. Si la misma etiqueta existe en el catálogo, se muestran por separado el resultado con video del catálogo y cada clip local.
 
 ### 2. Lecciones
 
@@ -86,7 +86,7 @@ Si usás Windows, podés probar `iniciar-tinku.bat` con Python 3 instalado; toda
 
 **¿La cámara reconoce si hice bien una seña?** No. Solo graba el clip que vos decidís capturar; una etiqueta no es una evaluación automática.
 
-**¿Los videos ya son LSB validados?** No. Las entradas actuales tienen `videoPath: null`; no están vinculadas a videos públicos o revisados.
+**¿Los videos ya son LSB validados?** Las 45 entradas están vinculadas a WebM y la persona propietaria declaró su revisión LSB y permiso de publicación. Esta herramienta no realizó validación lingüística independiente y no existe un despliegue real.
 
 **¿Qué ocurre con mi grabación?** Antes de guardar, es una vista previa temporal. Si elegís **Guardar seña**, queda en IndexedDB de este navegador y origen hasta que la eliminás o el navegador borra su almacenamiento. Nada se sube automáticamente.
 
@@ -94,4 +94,4 @@ Si usás Windows, podés probar `iniciar-tinku.bat` con Python 3 instalado; toda
 
 ## Para cerrar tu explicación
 
-Decí qué viste, no lo que imaginás: “Mostré etiquetas de texto, una práctica que se reinicia y una captura opcional que se guarda localmente solo con un clic”. Si alguien pregunta por una seña o por la calidad de un clip, la respuesta responsable es que hace falta revisión humana.
+Decí qué viste, no lo que imaginás: “Mostré una entrada de catálogo con su WebM, una práctica que se reinicia y una captura opcional que se guarda localmente solo con un clic”. Si alguien pregunta por una seña o por la calidad de un clip de Mis señas, la respuesta responsable es que hace falta revisión humana; los clips locales no se suben ni validan.
