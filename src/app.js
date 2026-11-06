@@ -39,6 +39,7 @@ import { createCaptureStore } from './capture-store.mjs';
 import { lookupWithLocalRecordings } from './local-recordings-search.mjs';
 import { getLocalDictionaryViewState } from './local-dictionary-view.mjs';
 import { revealAndPlaySavedPreview } from './saved-playback.mjs';
+import { createPhrasePlaybackSession } from './phrase-playback.mjs';
 
 const form = document.querySelector('#lookup-form');
 const input = document.querySelector('#lookup-input');
@@ -84,7 +85,8 @@ const beginnerLessons = buildBeginnerLessons(STARTER_CATALOG);
 let selectedLesson = beginnerLessons[0] ?? null;
 let practiceSession = selectedLesson ? createPracticeSession(selectedLesson) : null;
 let playbackSequence = [];
-let currentPlaybackIndex = 0;
+const phrasePlayback = createPhrasePlaybackSession();
+let pendingPhraseSourcePause = '';
 let skippedVideoCount = 0;
 let activeStream = null;
 let mediaRecorder = null;
@@ -141,7 +143,7 @@ function clearChildren(element) {
 }
 
 function currentPlaybackItem() {
-  return playbackSequence[currentPlaybackIndex];
+  return playbackSequence[phrasePlayback.state.index];
 }
 
 function setPlaybackStatus(message) {
@@ -149,6 +151,8 @@ function setPlaybackStatus(message) {
 }
 
 function disablePlayback(message) {
+  pendingPhraseSourcePause = '';
+  phrasePlayback.reset(0);
   sequenceVideo.pause();
   sequenceVideo.hidden = true;
   sequenceVideo.removeAttribute('src');
@@ -168,23 +172,28 @@ function syncPlaybackControls() {
   }
 
   sequenceVideo.hidden = false;
-  previousVideoButton.disabled = currentPlaybackIndex <= 0;
+  const { index } = phrasePlayback.state;
+  previousVideoButton.disabled = index <= 0;
   playCurrentVideoButton.disabled = false;
-  nextVideoButton.disabled = currentPlaybackIndex >= playbackSequence.length - 1;
+  nextVideoButton.disabled = index >= playbackSequence.length - 1;
 
   if (sequenceVideo.getAttribute('src') !== item.source) {
+    if (phrasePlayback.state.running) {
+      pendingPhraseSourcePause = item.source;
+    }
     sequenceVideo.src = item.source;
     sequenceVideo.load();
   }
 
-  sequenceVideo.setAttribute('aria-label', `Video ${currentPlaybackIndex + 1} de ${playbackSequence.length}: ${item.entry.displayLabel}`);
+  sequenceVideo.setAttribute('aria-label', `Video ${index + 1} de ${playbackSequence.length}: ${item.entry.displayLabel}`);
   const skippedMessage = skippedVideoCount > 0 ? ` Se omitieron ${skippedVideoCount} coincidencia(s) sin video.` : '';
-  setPlaybackStatus(`Video ${currentPlaybackIndex + 1} de ${playbackSequence.length}: ${item.entry.displayLabel}.${skippedMessage}`);
+  setPlaybackStatus(`Video ${index + 1} de ${playbackSequence.length}: ${item.entry.displayLabel}.${skippedMessage}`);
 }
 
 function preparePlayback(result) {
+  pendingPhraseSourcePause = '';
   playbackSequence = getPlayableSequence(result.recognized);
-  currentPlaybackIndex = 0;
+  phrasePlayback.reset(playbackSequence.length);
   skippedVideoCount = result.recognized.length - playbackSequence.length;
 
   if (result.tokens.length === 0) {
@@ -1268,39 +1277,72 @@ nextLessonButton.addEventListener('click', () => scrollLessonGallery(1));
 lessonList.addEventListener('scroll', syncLessonGalleryControls, { passive: true });
 window.addEventListener('resize', syncLessonGalleryControls);
 
+async function playPhraseRequest(request) {
+  try {
+    await sequenceVideo.play();
+    if (phrasePlayback.isCurrentRequest(request)) {
+      pendingPhraseSourcePause = '';
+    }
+  } catch {
+    if (phrasePlayback.rejectPlay(request).kind === 'blocked') {
+      setPlaybackStatus('El navegador no pudo continuar la frase automáticamente. Usá los controles nativos o “Reproducir frase” para seguir.');
+    }
+  }
+}
+
+function startPhrasePlayback() {
+  const action = phrasePlayback.start();
+  if (action.kind === 'empty') return;
+  syncPlaybackControls();
+  void playPhraseRequest(action.request);
+}
+
 previousVideoButton.addEventListener('click', () => {
-  if (currentPlaybackIndex > 0) {
-    currentPlaybackIndex -= 1;
+  const { index } = phrasePlayback.state;
+  if (index > 0) {
+    phrasePlayback.select(index - 1);
+    sequenceVideo.pause();
     syncPlaybackControls();
   }
 });
 
 nextVideoButton.addEventListener('click', () => {
-  if (currentPlaybackIndex < playbackSequence.length - 1) {
-    currentPlaybackIndex += 1;
+  const { index } = phrasePlayback.state;
+  if (index < playbackSequence.length - 1) {
+    phrasePlayback.select(index + 1);
+    sequenceVideo.pause();
     syncPlaybackControls();
   }
 });
 
+sequenceVideo.addEventListener('ended', () => {
+  const action = phrasePlayback.ended();
+  if (action.kind === 'next') {
+    syncPlaybackControls();
+    void playPhraseRequest(action.request);
+  } else if (action.kind === 'finished') {
+    setPlaybackStatus('Terminó la frase. Elegí “Reproducir frase” para volver al primer video.');
+  }
+});
+
+sequenceVideo.addEventListener('pause', () => {
+  if (pendingPhraseSourcePause === currentPlaybackItem()?.source) {
+    pendingPhraseSourcePause = '';
+    return;
+  }
+  if (!sequenceVideo.ended && phrasePlayback.pause().kind === 'stopped') {
+    setPlaybackStatus('La reproducción ordenada quedó en pausa. Podés usar los controles nativos o “Reproducir frase” para continuar.');
+  }
+});
+
 sequenceVideo.addEventListener('error', () => {
+  phrasePlayback.error();
   const item = currentPlaybackItem();
   const label = item?.entry?.displayLabel ?? 'seleccionado';
   setPlaybackStatus(`No se pudo cargar o decodificar el video de ${label}. Probá otra entrada o revisá el archivo del catálogo.`);
 });
 
-playCurrentVideoButton.addEventListener('click', async () => {
-  const item = currentPlaybackItem();
-  if (!item) {
-    return;
-  }
-
-  syncPlaybackControls();
-  try {
-    await sequenceVideo.play();
-  } catch {
-    setPlaybackStatus('El navegador no pudo reproducir este video. Probá usar los controles nativos del reproductor.');
-  }
-});
+playCurrentVideoButton.addEventListener('click', startPhrasePlayback);
 
 startCameraButton.addEventListener('click', toggleCamera);
 startRecordingButton.addEventListener('click', toggleRecording);
