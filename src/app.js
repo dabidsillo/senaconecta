@@ -37,6 +37,7 @@ import {
   streamHasAudioTracks
 } from './capture.mjs';
 import { createCaptureStore } from './capture-store.mjs';
+import { revealAndPlaySavedPreview } from './saved-playback.mjs';
 
 const form = document.querySelector('#lookup-form');
 const input = document.querySelector('#lookup-input');
@@ -706,7 +707,19 @@ async function selectSavedRecording(id) {
     recordedPlaceholder.hidden = true;
     metadataPreview.textContent = JSON.stringify(entry.metadata, null, 2);
     metadataPreview.hidden = false;
-    setCaptureStatus(`Vista previa local lista para “${entry.metadata?.label || 'Sin etiqueta'}”.`);
+    setCaptureStatus('Vista previa local lista. Iniciando reproducción…');
+    const playback = await revealAndPlaySavedPreview(recordedPreview);
+    if (requestId !== savedPreviewRequestId || selectedSavedRecordingId !== id) return;
+    const label = entry.metadata?.label || 'Sin etiqueta';
+    if (playback.outcome === 'playing') {
+      setCaptureStatus(`Reproduciendo localmente “${label}”.`);
+    } else if (playback.outcome === 'blocked') {
+      setCaptureStatus(`No se pudo iniciar “${label}” automáticamente. Usá los controles del video para reproducirlo.`);
+    } else if (playback.outcome === 'unsupported') {
+      setCaptureStatus(`Este navegador no admite el formato de “${label}”. Probá los controles del video o abrilo en un navegador compatible.`);
+    } else {
+      setCaptureStatus(`No se pudo iniciar “${label}” automáticamente. El clip sigue disponible en los controles del video para reintentar.`);
+    }
   } catch (error) {
     if (requestId !== savedPreviewRequestId || selectedSavedRecordingId !== id) return;
     setCaptureStatus(error?.code === 'unavailable'
