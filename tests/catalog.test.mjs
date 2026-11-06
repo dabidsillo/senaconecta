@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import {
   CATALOG_VERSION,
   STARTER_CATALOG,
@@ -68,12 +70,13 @@ test('formatCategoryLabel displays all canonical categories without changing cat
   );
 });
 
-test('catalog retains user-provided spelling and placeholder media status without aliases', () => {
+test('catalog retains user-provided spelling and owner-attested video status without aliases', () => {
   for (const entry of STARTER_CATALOG) {
-    assert.equal(entry.validationStatus, 'placeholder');
-    assert.equal(entry.videoPath, null);
+    assert.equal(entry.validationStatus, 'owner-attested-review');
+    assert.equal(entry.videoPath, `./assets/catalog/${entry.id}.webm`);
     assert.deepEqual(entry.aliases, []);
-    assert.doesNotMatch(entry.description, /ilustrativ/i);
+    assert.match(entry.description, /declarad[ao]s por la persona propietaria/i);
+    assert.match(entry.description, /no constituyen una verificación lingüística independiente/i);
   }
 
   assert.deepEqual(
@@ -81,6 +84,21 @@ test('catalog retains user-provided spelling and placeholder media status withou
       .map((entry) => entry.displayLabel),
     ['Café', 'Cóndor', 'Potosí', 'Mamá', 'Papá', 'Piña', 'Plátano', 'Baño']
   );
+});
+
+test('catalog video paths map one-to-one to the 45 public flat WebM assets', async () => {
+  const assetDirectory = fileURLToPath(new URL('../assets/catalog/', import.meta.url));
+  const assets = await readdir(assetDirectory, { withFileTypes: true });
+  const assetNames = assets.map((asset) => asset.name).sort();
+  const expectedAssetNames = STARTER_CATALOG.map((entry) => `${entry.id}.webm`).sort();
+
+  assert.equal(STARTER_CATALOG.length, 45);
+  assert.equal(new Set(STARTER_CATALOG.map((entry) => entry.category)).size, 9);
+  assert.deepEqual(assetNames, expectedAssetNames);
+  assert.equal(new Set(assetNames).size, 45);
+  assert.ok(assets.every((asset) => asset.isFile() && !asset.isSymbolicLink()));
+  assert.ok(assetNames.every((name) => /^[a-z0-9-]+\.webm$/.test(name)));
+  assert.ok(assetNames.every((name) => !name.endsWith('.json')));
 });
 
 test('lookupText recognizes current multiword phrases in order and leaves only unmatched tokens unknown', () => {

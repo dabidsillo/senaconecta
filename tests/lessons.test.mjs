@@ -27,7 +27,8 @@ test('buildBeginnerLessons creates all 9 category lessons from the shared final 
   assert.equal(lessons.length, 9);
   assert.equal(lessons.reduce((count, lesson) => count + lesson.entries.length, 0), 45);
   assert.ok(lessons.every((lesson, index) => lesson.position === index + 1));
-  assert.ok(lessons.every((lesson) => lesson.entries.every((entry) => entry.validationStatus === 'placeholder')));
+  assert.ok(lessons.every((lesson) => lesson.entries.every((entry) => entry.validationStatus === 'owner-attested-review')));
+  assert.ok(lessons.every((lesson) => lesson.entries.every((entry) => entry.videoPath === `./assets/catalog/${entry.id}.webm`)));
 });
 
 test('buildBeginnerLessons formats the selected lesson title while retaining its stable ID', () => {

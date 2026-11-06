@@ -47,9 +47,9 @@ function createEntry(category, displayLabel) {
     displayLabel,
     category,
     aliases: Object.freeze([]),
-    description: 'Vocabulario provisto por usuarios; seña y video pendientes de validación.',
-    videoPath: null,
-    validationStatus: 'placeholder'
+    description: 'Video disponible. La revisión LSB y la autorización de publicación fueron declaradas por la persona propietaria; no constituyen una verificación lingüística independiente.',
+    videoPath: `./assets/catalog/${stableId(category, displayLabel)}.webm`,
+    validationStatus: 'owner-attested-review'
   });
 }
 

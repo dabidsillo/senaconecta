@@ -1,12 +1,12 @@
 # Tinku MVP — dictionary, lessons, and local capture
 
-Tinku is a mobile-first Spanish prototype for exploring textual vocabulary, practicing by category, and optionally recording a short labeled clip. The shared catalog has **45 text labels in 9 categories**. They are supplied vocabulary labels, not validated Bolivian Sign Language claims.
+Tinku is a mobile-first Spanish prototype for exploring vocabulary, practicing by category, and optionally recording a short labeled clip. The shared catalog has **45 labels in 9 categories** and a public WebM asset for each entry. The media review and publication authorization are owner-attested, not independent linguistic verification of Bolivian Sign Language claims.
 
 The dictionary search and practice are temporary: search does not store queries, and practice restarts after a reload. A recorded clip is different: after recording, use **Guardar seña** explicitly to save the clip and its frozen label in IndexedDB for this browser origin. Saved clips remain available after reloads in that same browser until you delete them or the browser evicts its storage. You can play or delete each saved clip from the local list.
 
-During a free-text dictionary search, matching saved labels appear separately under **Mis señas**. That panel is browser-local and explicitly unvalidated: its clips do not change the public 45-item catalog, category/word selectors, or lessons. A matching catalog label still appears as its catalog placeholder, while each locally saved clip remains a distinct playable result.
+During a free-text dictionary search, matching saved labels appear separately under **Mis señas**. That panel is browser-local and explicitly unvalidated: its clips do not change the public 45-item catalog, category/word selectors, or lessons. A matching catalog label still appears with its owner-attested catalog video, while each locally saved clip remains a distinct playable result.
 
-No video or JSON files are downloaded. Tinku does not create accounts, use a backend, upload clips, or automatically promote a saved clip into the catalog. It does not translate signs, recognize movement, or validate a sign.
+The public catalog includes 45 WebM files under `assets/catalog/`; it includes no JSON files from the private source collection. Tinku does not create accounts, use a backend, upload clips, or automatically promote a saved clip into the catalog. It does not translate signs, recognize movement, or independently validate a sign.
 
 **Student guide (no programming required): [docs/guia-para-estudiantes.md](docs/guia-para-estudiantes.md).** **Learn the page block by block in Spanish: [docs/codigo-html-paso-a-paso.md](docs/codigo-html-paso-a-paso.md).** Beginner project guide: [docs/guia-del-proyecto.md](docs/guia-del-proyecto.md). Defense guide: [docs/guia-de-defensa.md](docs/guia-de-defensa.md).
 
@@ -24,7 +24,7 @@ No video or JSON files are downloaded. Tinku does not create accounts, use a bac
 | LUGARES | Baño, Casa, Escuela, Hospital, Mercado |
 | SALUDOS | Chau, Gracias, Hola, Lo siento, Por favor, Te amo |
 
-Every current entry in `src/catalog.mjs` has `videoPath: null` and `validationStatus: 'placeholder'`. The UI therefore shows an unavailable-video state; it does not link to or publish creator sign videos. Do not claim that this repository hosts videos or that a site launch has been verified.
+Every current entry in `src/catalog.mjs` has a document-relative `videoPath` under `./assets/catalog/` and `validationStatus: 'owner-attested-review'`. The UI can play the catalog videos and identifies their review as owner-declared; this is not independent linguistic proof. The repository contains the authorized assets, but no deployment or site launch has been verified.
 
 ## Run locally
 
@@ -53,11 +53,11 @@ Get appropriate consent before recording anyone, especially minors. Do not proje
 
 ## Catalog, videos, lessons, and capture
 
-The dictionary selector and lessons read only `src/catalog.mjs`. Free-text search can also match saved recording metadata in the separate **Mis señas** panel, without loading local video data until you choose its playback button. Search is independent of exact category selection and can recognize catalog phrases such as `Lo siento` or `Santa Cruz`. Current labels are placeholders only: none has a linked or public video because every `videoPath` is `null`.
+The dictionary selector and lessons read only `src/catalog.mjs`. Free-text search can also match saved recording metadata in the separate **Mis señas** panel, without loading local video data until you choose its playback button. Search is independent of exact category selection and can recognize catalog phrases such as `Lo siento` or `Santa Cruz`. Each catalog entry has a linked public WebM asset; **Mis señas** remains separate browser-local data and does not change catalog review status.
 
 Lessons are generated from the shared categories. Practice state exists only in JavaScript memory for the current tab, so refreshing or closing the page loses it by design. Saved recordings are separate browser-local data and can remain after a reload.
 
-Private creator media belongs outside any public build; the root `videos/` directory is ignored by Git for ordinary adds. Git ignore rules do **not** prevent a web server pointed at the repository root from serving private files to anyone who can reach it. For any public deployment, publish only an explicit allowlist of public app files—not the repository root, private documents, or media. No catalog entry or validation wording should change until a real review by qualified LSB creators or collaborators has happened.
+The ignored source collection and its JSON files remain private and must stay outside any public build. Git ignore rules do **not** prevent a web server pointed at the repository root from serving private files to anyone who can reach it. For any public deployment, use an explicit allowlist containing only `index.html`, public styles and JavaScript modules required by the app, intentionally selected public documentation, and `assets/catalog/*.webm`; never deploy the repository root, the ignored source collection, or its JSON. The owner-attested media status does not replace a real review by qualified LSB creators or collaborators.
 
 ## Future slices
 

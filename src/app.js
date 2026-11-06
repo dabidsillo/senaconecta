@@ -250,7 +250,7 @@ function renderRecognized(result, selected = false) {
     header.appendChild(createElement('span', 'badge', formatCategoryLabel(item.entry.category)));
     card.appendChild(header);
 
-    card.appendChild(createElement('span', 'status-pill', item.entry.videoPath ? 'Video declarado' : 'Pendiente de video'));
+    card.appendChild(createElement('span', 'status-pill', item.entry.videoPath ? 'Video disponible; revisión declarada' : 'Pendiente de video'));
     appendVideoState(card, item.entry);
     card.appendChild(createElement('p', 'meta', item.entry.description));
     recognizedList.appendChild(card);

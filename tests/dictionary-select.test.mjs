@@ -43,9 +43,10 @@ test('dictionary selection resolves Papá uniquely and does not include the remo
   assert.equal(STARTER_CATALOG.some((entry) => entry.displayLabel === 'Papa'), false);
 });
 
-test('selector entries preserve the catalog no-video state', () => {
+test('selector entries preserve the catalog owner-attested video paths', () => {
   const entries = getDictionaryEntries('SALUDOS');
 
   assert.ok(entries.length > 0);
-  assert.ok(entries.every((entry) => entry.videoPath === null));
+  assert.ok(entries.every((entry) => entry.validationStatus === 'owner-attested-review'));
+  assert.ok(entries.every((entry) => entry.videoPath === `./assets/catalog/${entry.id}.webm`));
 });
