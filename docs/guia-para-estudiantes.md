@@ -58,7 +58,7 @@ Al elegir una entrada, por ejemplo Familia → Papá, aparece su video del catá
 
 Si ya guardaste un clip y buscás su etiqueta por texto, puede aparecer una zona azul separada llamada **Mis señas**. Cada tarjeta tiene controles nativos de video para reproducir su propio clip; el navegador prepara los clips cercanos de forma diferida. Cada uno sigue siendo local y sin validar: no se agrega al catálogo, no cambia las categorías, ni vuelve correcta una seña. Si la misma etiqueta existe en el catálogo, se muestran por separado el resultado con video del catálogo y cada clip local.
 
-Al elegir **Reproducir frase**, la frase sigue el orden escrito. Solo en ese momento puede usar como respaldo el clip local más reciente de una etiqueta exacta que no tenga video público reproducible; un video público siempre tiene prioridad. Ese clip local no se lee durante la búsqueda y sigue sin validar. Si falta, el almacenamiento falla o el navegador no puede decodificarlo, la frase se detiene y no salta a otra seña.
+Al elegir **Reproducir frase**, la frase sigue el orden escrito. Solo en ese momento puede usar como respaldo el clip local más reciente de una etiqueta exacta que no tenga una ruta pública `videoPath` declarada y no vacía. Una ruta pública declarada siempre tiene prioridad al planificar, aunque el navegador luego no pueda reproducirla: la frase muestra el error y se detiene, sin pasar dinámicamente al clip local. Ese clip local no se lee durante la búsqueda y sigue sin validar. Si falta, el almacenamiento falla o el navegador no puede decodificarlo, la frase se detiene y no salta a otra seña.
 
 ### 2. Lecciones
 

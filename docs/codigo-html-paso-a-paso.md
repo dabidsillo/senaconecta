@@ -89,7 +89,7 @@ Esta guía te deja leer la página real de Tinku sin saber programar. **HTML org
 
 - **Qué miro:** botones, una galería vacía al principio y el espacio de práctica.
 - **Qué significa:** `role="group"` reúne controles relacionados; `role="region"` y `aria-label` nombran la galería. `tabindex="0"` permite enfocarla con teclado. `aria-describedby` enlaza las instrucciones para recorrerla.
-- **Qué pasa al usarlo:** JavaScript crea las tarjetas desde el catálogo; CSS las acomoda horizontalmente. Los botones avanzan o retroceden. La práctica es textual y se reinicia al recargar porque no se guarda fuera de la pestaña.
+- **Qué pasa al usarlo:** JavaScript crea las tarjetas desde el catálogo; CSS las acomoda horizontalmente. Los botones avanzan o retroceden. En la práctica, JavaScript crea un reproductor nativo con el video público de la entrada y deja las opciones como botones de texto: el HTML solo reserva el panel. Las opciones aparecen recién cuando el video empieza a reproducirse; si falta o falla el video, muestra un aviso y no ofrece respuestas. La sesión se reinicia al recargar porque no se guarda fuera de la pestaña.
 
 ## 5. Cámara: vista previa, etiqueta y guardado local
 

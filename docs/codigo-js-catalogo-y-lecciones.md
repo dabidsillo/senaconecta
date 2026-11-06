@@ -95,11 +95,14 @@ form.addEventListener('submit', (event) => {
 ```
 
 ```js
-function renderResult(inputText) {
-  const result = lookupText(inputText);
+function renderResult(inputText, playbackInterruptionMessage = '', preservePhrasePlayback = false) {
+  activeDictionaryMode = 'search';
+  activeFreeTextQuery = inputText;
+  const result = lookupWithLocalRecordings(inputText, savedRecordings);
+  const curatedResult = { ...result, recognized: result.curatedRecognized };
 ```
 
-Al enviar, el evento toma lo escrito y llama a `renderResult`; esta llama a `lookupText`. Después el resultado se dibuja creando nodos y usando `textContent`, así el texto ingresado no se interpreta como HTML. Los videos solo se preparan desde rutas declaradas. Si una futura entrada no tuviera `videoPath`, queda el estado genérico sin video; las 45 entradas actuales sí tienen ruta.
+Al enviar, el evento toma lo escrito y llama a `renderResult`. La búsqueda combina las coincidencias del catálogo con metadata de clips locales ya listada; no lee ni reproduce esos clips para decidir el resultado. Para una frase, `prepareSearchPlayback` usa `createPhraseSequencePlan`: una ruta pública `videoPath` declarada y no vacía gana al planificar; solo usa el clip local sin validar más reciente cuando no hay esa ruta pública. Si ese medio público después falla en el navegador, la frase muestra el error y se detiene, sin pasar dinámicamente al clip local. Después el resultado se dibuja creando nodos y usando `textContent`, así el texto ingresado no se interpreta como HTML. Los videos públicos solo se preparan desde rutas declaradas; un clip local se carga recién al reproducirlo. Si no hay medio disponible, la interfaz muestra un estado honesto sin inventar señas.
 
 ### Probalo: frase y desconocida
 
@@ -177,24 +180,36 @@ Una sesión guarda `currentIndex`, aciertos, intentos, finalización y el últim
 
 Si la respuesta es incorrecta, conserva el índice. Si es correcta y no es la última, avanza; el último acierto marca finalizada la sesión.
 
-**`src/app.js` — extracto exacto**
+**`src/app.js` — extractos exactos**
 
 ```js
-button.addEventListener('click', () => {
-  const result = answerPracticeStep(practiceSession, selectedLesson, option.id);
-  practiceSession = result.nextSession;
-  renderPractice();
+video.addEventListener('playing', () => {
+  if (mediaFailed || renderId !== practiceRenderId || !practiceCard.contains(video) || options) return;
+  mediaStatus.textContent = 'Podés responder cuando identifiques la seña.';
+  options = appendPracticeOptions(prompt, renderId);
+  renderPracticeFeedback();
 });
 ```
 
-El evento de clic pide el nuevo estado y redibuja la práctica. Recargar crea de nuevo esa memoria, por eso el avance se reinicia y no queda guardado.
+```js
+const result = answerPracticeStep(practiceSession, selectedLesson, option.id);
+practiceSession = result.nextSession;
+if (result.correct) {
+  renderPractice();
+} else {
+  renderPracticeFeedback();
+}
+```
 
-### Probalo: error, acierto y recarga
+El reproductor nativo muestra el video público de la entrada. El evento `playing` recién crea las opciones de texto. Al responder, un error conserva el video y el paso para intentar otra vez; un acierto redibuja y avanza. Si no hay ruta de video o el reproductor emite `error`, la práctica muestra un aviso y retira o no presenta las opciones. Recargar crea de nuevo esa memoria, por eso el avance se reinicia y no queda guardado.
 
-1. Elegí una lección y respondé una opción incorrecta.
-2. Elegí la correcta y después recargá la página.
+### Probalo: reproducción, error, acierto y recarga
 
-**Resultado esperado:** el error mantiene el paso, el acierto avanza y la recarga borra el progreso de la sesión.
+1. Elegí una lección y reproducí la seña antes de buscar respuestas.
+2. Elegí una opción incorrecta y luego la correcta.
+3. Recargá la página.
+
+**Resultado esperado:** las opciones aparecen al empezar el video; el error mantiene el paso y su video, el acierto avanza y la recarga borra el progreso de la sesión.
 
 ## 5. Galería: límites, eventos y foco
 

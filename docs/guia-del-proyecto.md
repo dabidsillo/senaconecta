@@ -163,12 +163,13 @@ Funciones clave:
 - `tokenizeText(value)`: separa el texto en palabras.
 - `createLexicon(catalog)`: arma un mapa para encontrar entradas por término.
 - `lookupText(input, catalog)`: devuelve palabras reconocidas y desconocidas.
-- `getPlayableSequence(recognizedItems)`: filtra solo resultados con `videoPath` real.
+- `getPlayableSequence(recognizedItems)`: prepara videos de una entrada elegida del catálogo con `videoPath` declarado y no vacío.
+- `createPhraseSequencePlan(input, savedMetadataEntries)`: en búsqueda libre prepara una frase con rutas públicas declaradas y no vacías y, solo si falta esa ruta pública, metadata de un clip local sin validar. No comprueba que el navegador pueda reproducir la ruta.
 
 Flujo simple de búsqueda libre:
 
 ```text
-texto escrito → normalizeText → tokenizeText → lookupText → resultados reconocidos/desconocidos
+texto escrito → normalizeText → tokenizeText → lookupWithLocalRecordings → createPhraseSequencePlan → resultados y secuencia
 ```
 
 Si la persona escribe “Por favor, amigo”, el sistema reconoce la frase `Por favor` y conserva `amigo` como texto no encontrado. La búsqueda libre puede encontrar frases completas como `Lo siento` o `Santa Cruz`.
@@ -199,8 +200,11 @@ Funciones clave:
 
 - `buildBeginnerLessons`: crea lecciones desde categorías.
 - `createPracticeSession`: inicia el avance de una lección.
-- `getPracticePrompt`: prepara la pregunta actual.
+- `getPracticePrompt`: prepara la pregunta actual y su ruta de video.
+- `getPracticeMediaState`: comprueba si el paso declara un `videoPath` no vacío; no decide si el navegador puede reproducirlo.
 - `answerPracticeStep`: evalúa una respuesta y devuelve el siguiente estado.
+
+En la interfaz, `renderPractice` crea un reproductor nativo para el video público del paso. Las opciones de texto se habilitan únicamente con el evento `playing`; una respuesta incorrecta conserva ese video y el paso, mientras que una correcta avanza. Si falta la ruta o el reproductor falla, muestra un aviso y no presenta opciones.
 
 ## src/capture.mjs: cámara, etiqueta y metadata
 
@@ -267,7 +271,7 @@ Responsabilidades de `app.js`:
 Funciones útiles para estudiar:
 
 - `renderResult(inputText)`: coordina búsqueda y renderizado.
-- `preparePlayback(result)`: arma la secuencia de videos disponibles.
+- `prepareSearchPlayback(inputText)`: arma la secuencia para una búsqueda libre con `createPhraseSequencePlan`.
 - `appendMissingVideoState(card)`: muestra estado honesto cuando no hay video.
 - `renderLessons()`: dibuja lecciones.
 - `renderPractice()`: dibuja la pregunta actual.
@@ -284,12 +288,12 @@ Funciones útiles para estudiar:
 ```text
 1. La persona escribe texto en el formulario.
 2. app.js intercepta el submit.
-3. renderResult llama lookupText.
+3. renderResult llama lookupWithLocalRecordings con el catálogo y la metadata local ya cargada.
 4. catalog.mjs normaliza y separa tokens.
-5. Se devuelven reconocidos y desconocidos.
-6. app.js dibuja tarjetas y palabras no encontradas.
-7. getPlayableSequence deja pasar solo entradas con videoPath.
-8. Para las entradas actuales, la UI prepara su video WebM; si falta una ruta en una entrada futura, muestra estado pendiente en lugar de inventar señas.
+5. Se devuelven coincidencias públicas, locales y desconocidas.
+6. createPhraseSequencePlan prefiere una ruta pública `videoPath` declarada y no vacía y solo usa metadata local sin validar si no existe esa ruta pública.
+7. app.js dibuja tarjetas y palabras no encontradas.
+8. La UI prepara el video WebM público o carga el clip local recién al reproducirlo; si la ruta pública luego falla en el navegador, muestra el error y detiene la frase sin pasar dinámicamente al clip local. Si no hay medio, muestra estado pendiente en lugar de inventar señas.
 ```
 
 Este flujo demuestra separación de responsabilidades: el catálogo decide qué datos existen; la interfaz decide cómo mostrarlos.
@@ -300,11 +304,11 @@ Este flujo demuestra separación de responsabilidades: el catálogo decide qué 
 1. buildBeginnerLessons agrupa el catálogo por categoría.
 2. app.js selecciona una lección inicial.
 3. createPracticeSession crea estado temporal.
-4. getPracticePrompt arma la pregunta actual.
-5. La persona elige una opción.
-6. answerPracticeStep calcula si fue correcta.
-7. app.js vuelve a renderizar la práctica.
-8. Al recargar la página, el estado desaparece.
+4. getPracticePrompt arma la pregunta y getPracticeMediaState revisa su video.
+5. renderPractice muestra el reproductor nativo público.
+6. El evento playing habilita las opciones de texto.
+7. answerPracticeStep conserva el paso ante un error y avanza ante un acierto.
+8. Si falta o falla el video, no aparecen opciones; al recargar, el estado desaparece.
 ```
 
 Las 9 categorías aparecen como tarjetas compactas en una galería horizontal. Se puede avanzar con touch o trackpad, enfocar la galería para recorrerla con teclado o usar los botones Anterior y Siguiente; cada botón avanza una tarjeta y se desactiva en el límite. La práctica elegida sigue debajo de la galería.
@@ -334,9 +338,9 @@ Nada se sube. Si la persona cierra la pestaña sin guardar, pierde la vista prev
 
 Las 45 entradas actuales enlazan archivos WebM VP8 versionados en `assets/catalog/`; no son clips privados de la cámara. La persona propietaria declaró que fueron revisados para LSB y autorizados para publicación. Esta herramienta no verificó esa revisión de manera independiente, y tener los archivos en el proyecto no significa que haya un sitio desplegado.
 
-Para demostrar la experiencia, ejecutá el sitio local, elegí una categoría y una palabra —por ejemplo, Familia → Papá— y usá los controles del reproductor. `src/app.js` carga solo la ruta declarada por `src/catalog.mjs`; no inventa movimientos. Si alguna ruta futura falta, conserva el aviso genérico “Video no disponible”.
+Para demostrar la experiencia, ejecutá el sitio local, elegí una categoría y una palabra —por ejemplo, Familia → Papá— y usá los controles del reproductor. `src/app.js` carga solo la ruta declarada por `src/catalog.mjs`; no inventa movimientos. Si alguna ruta futura falta, conserva el aviso genérico “Video no disponible”. La existencia de los archivos WebM VP8 no prueba por sí misma su reproducción en cada navegador ni un despliegue.
 
-**Mis señas** es otra cosa: son clips que una persona graba y decide guardar en IndexedDB de su propio navegador. No se suben, no se exportan automáticamente, no cambian `videoPath`, no se agregan al catálogo y siguen sin validación. Antes de usar un nuevo video en catálogo, corresponde un proceso humano autorizado; no cambies `validationStatus` ni textos de validez por inferencia.
+**Mis señas** es otra cosa: son clips que una persona graba y decide guardar en IndexedDB de su propio navegador. En una búsqueda de frase, su metadata puede servir como respaldo solo cuando no hay una ruta pública `videoPath` declarada y no vacía; el clip se carga recién al intentar reproducirlo y sigue sin validación. Una ruta pública declarada gana al planificar incluso si después falla en el navegador: se muestra el error y la frase se detiene, sin respaldo local dinámico. No se suben, no se exportan automáticamente, no cambian `videoPath` ni se agregan al catálogo. Antes de usar un nuevo video en catálogo, corresponde un proceso humano autorizado; no cambies `validationStatus` ni textos de validez por inferencia.
 
 ## Decisiones y tradeoffs del proyecto
 

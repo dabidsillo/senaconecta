@@ -29,7 +29,7 @@ La frase más importante para decir con honestidad es esta:
 1. **Problema.** “Un proyecto escolar de lengua de señas puede exagerar fácilmente lo que hace. Este MVP propone una base pequeña y honesta.”
 2. **Solución.** “La aplicación corre en el navegador. Permite elegir una etiqueta exacta con categoría y palabra, buscar texto o frases, practicar las 9 categorías y, con permiso, grabar un clip etiquetado.”
 3. **Persistencia local.** “Buscar y practicar son temporales. Cuando termina una grabación, puedo elegir **Guardar seña**: ese clic guarda el clip solo en IndexedDB de este navegador y origen. Luego puedo reproducirlo o eliminarlo.”
-4. **Demostración.** “Voy a seleccionar `Familia → Papá` y reproducir su video de catálogo, buscar `Santa Cruz` y mostrar una práctica. Si uso cámara, mostraré un clip de menos de 15 segundos y su guardado local.”
+4. **Demostración.** “Voy a seleccionar `Familia → Papá` y reproducir su video de catálogo, buscar `Santa Cruz` y mostrar una práctica. En la práctica primero reproduciré la seña: las opciones aparecen al iniciar el video; después mostraré una respuesta incorrecta y una correcta. Si uso cámara, mostraré un clip de menos de 15 segundos y su guardado local.”
 5. **Límites.** “No hay backend, cuentas, IA, reconocimiento automático, subida de archivos locales ni verificación lingüística independiente. El clip de Mis señas no se agrega al catálogo y no se descarga como video o JSON.”
 6. **Siguiente paso responsable.** “Los 45 videos fueron declarados revisados y publicables por su propietario, pero no diré que la herramienta los verificó ni que el sitio ya está desplegado.”
 
@@ -54,7 +54,9 @@ Luego abrí `http://localhost:8000`. Evitá `file://` porque puede bloquear mód
 
 - [ ] Entrá a **Lecciones**.
 - [ ] Mostrá las 9 categorías en la galería horizontal y usá touch/trackpad, teclado o **Anterior**/**Siguiente**.
-- [ ] Elegí una categoría, respondé una opción incorrecta y luego una correcta.
+- [ ] Elegí una categoría y reproducí primero el video público de la seña.
+- [ ] Confirmá que las opciones de texto aparecen solo cuando empieza la reproducción; respondé una opción incorrecta y luego una correcta.
+- [ ] Explicá que la incorrecta conserva el video y el paso, mientras la correcta avanza. Si el video falta o no se puede cargar, no se ofrecen opciones.
 - [ ] Recargá si querés demostrar el límite: el progreso vuelve a empezar porque solo vive en memoria de la pestaña.
 
 ### 3. Cámara opcional y guardado explícito
@@ -82,7 +84,7 @@ Pedí consentimiento antes de activar la cámara y antes de conservar o mostrar 
 | No hay cámara | Saltá la grabación y explicá `src/capture.mjs` con la UI visible. | “La cámara es opcional; la app debe seguir explicándose sin capturar datos.” |
 | El navegador bloquea cámara | Confirmá que estás en `localhost`; si sigue fallando, no fuerces permisos. | “El navegador protege cámara por permisos y contexto seguro.” |
 | No se puede guardar | No fuerces intentos repetidos; explicá cuota, privacidad o falta de IndexedDB. | “El almacenamiento es local y depende de las reglas y espacio del navegador.” |
-| Un archivo de catálogo falta o no carga | Mostrá el aviso “Video no disponible” o el error del reproductor. | “Ese es el respaldo genérico para un activo ausente; las 45 rutas actuales del catálogo apuntan a WebM.” |
+| Un archivo de catálogo falta o no carga | Mostrá el aviso “Video no disponible” o el error del reproductor; en práctica, no habrá opciones. | “Ese es el respaldo genérico para un activo ausente; las 45 rutas actuales del catálogo apuntan a WebM VP8, pero eso no sustituye una comprobación en navegador.” |
 | No abre con `file://` | Usá el servidor Python local. | “Python solo sirve archivos; la app sigue siendo del navegador.” |
 | Node no ejecuta pruebas | Revisá que el comando se corra desde la raíz del repo. | “Node se usa para pruebas automáticas, no para servir la aplicación final.” |
 
@@ -104,7 +106,7 @@ Pedí consentimiento antes de activar la cámara y antes de conservar o mostrar 
 
 **¿Dónde está el catálogo?** En [src/catalog.mjs](../src/catalog.mjs). Ahí están las 45 entradas, sus rutas relativas `./assets/catalog/<id>.webm` y `validationStatus: 'owner-attested-review'`.
 
-**¿Cómo se evita inventar videos?** `getPlayableSequence` en [src/catalog.mjs](../src/catalog.mjs) solo acepta `videoPath` no vacío. [src/app.js](../src/app.js) prepara la secuencia y el reproductor para las rutas actuales; mantiene el estado genérico pendiente para una entrada futura sin ruta.
+**¿Cómo se evita inventar videos?** Para una entrada elegida, `getPlayableSequence` en [src/catalog.mjs](../src/catalog.mjs) acepta solo `videoPath` no vacío. Para búsqueda libre, [src/app.js](../src/app.js) usa `createPhraseSequencePlan`: una ruta pública `videoPath` declarada y no vacía gana al planificar, y solo puede usar metadata de un clip local sin validar cuando falta esa ruta. Si esa ruta pública después falla en el navegador, muestra el error y detiene la frase; no cambia dinámicamente al clip local. Si no hay medio, mantiene un estado pendiente en vez de inventar una seña.
 
 **¿Cómo se guarda un clip?** [src/app.js](../src/app.js) llama a `captureStore.save` solo después del clic explícito. [src/capture-store.mjs](../src/capture-store.mjs) guarda el Blob y la metadata en IndexedDB; lista metadata y lee el Blob al reproducirlo.
 
@@ -115,7 +117,8 @@ Pedí consentimiento antes de activar la cámara y antes de conservar o mostrar 
 ## Límites que conviene decir antes de que los pregunten
 
 - No afirmes mejora de aprendizaje porque no hay medición con estudiantes.
-- No afirmes compatibilidad con todos los navegadores; cámara, grabación e IndexedDB dependen del navegador y dispositivo.
+- No afirmes compatibilidad con todos los navegadores; cámara, grabación, IndexedDB y la reproducción de WebM dependen del navegador y dispositivo.
+- No afirmes que los controles o las opciones de práctica fueron validados en un navegador si solo corriste pruebas de Node; la reproducción y el evento `playing` requieren comprobación manual.
 - No digas que hay IA, reconocimiento automático o traducción de señas.
 - No presentes la declaración del propietario como verificación lingüística independiente ni como certificación oficial.
 - No prometas alojamiento, publicación o lanzamiento: los videos son publicables, pero no hay despliegue real.
