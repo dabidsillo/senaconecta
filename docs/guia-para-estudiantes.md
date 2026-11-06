@@ -56,7 +56,7 @@ Elegí una categoría y una etiqueta, por ejemplo **Familia → Papá**. Tambié
 
 Al elegir una entrada, por ejemplo Familia → Papá, aparece su video del catálogo y podés usar los controles para reproducirlo. Los 45 WebM tienen revisión LSB y permiso de publicación declarados por la persona propietaria; no digas que esta herramienta lo verificó independientemente ni que el sitio ya está desplegado. “Video no disponible” sigue siendo un respaldo genérico si falta un archivo.
 
-Si ya guardaste un clip y buscás su etiqueta por texto, puede aparecer una zona separada llamada **Mis señas**. Allí cada clip dice que es local y sin validar: se puede reproducir dentro del Diccionario, pero no se agrega al catálogo, no cambia las categorías, ni vuelve correcta una seña. Si la misma etiqueta existe en el catálogo, se muestran por separado el resultado con video del catálogo y cada clip local.
+Si ya guardaste un clip y buscás su etiqueta por texto, puede aparecer una zona azul separada llamada **Mis señas**. Cada tarjeta tiene controles nativos de video para reproducir su propio clip; el navegador prepara los clips cercanos de forma diferida. Cada uno sigue siendo local y sin validar: no se agrega al catálogo, no cambia las categorías, ni vuelve correcta una seña. Si la misma etiqueta existe en el catálogo, se muestran por separado el resultado con video del catálogo y cada clip local.
 
 ### 2. Lecciones
 

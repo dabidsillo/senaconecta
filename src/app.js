@@ -38,6 +38,7 @@ import {
 import { createCaptureStore } from './capture-store.mjs';
 import { lookupWithLocalRecordings } from './local-recordings-search.mjs';
 import { getLocalDictionaryViewState } from './local-dictionary-view.mjs';
+import { createLocalVideoLoader } from './local-video-loader.mjs';
 import { revealAndPlaySavedPreview } from './saved-playback.mjs';
 import { createPhrasePlaybackSession } from './phrase-playback.mjs';
 
@@ -50,7 +51,6 @@ const unknownList = document.querySelector('#unknown-list');
 const localDictionaryPanel = document.querySelector('#local-dictionary-panel');
 const localDictionaryStatus = document.querySelector('#local-dictionary-status');
 const localDictionaryList = document.querySelector('#local-dictionary-list');
-const localDictionaryVideo = document.querySelector('#local-dictionary-video');
 const exampleButtons = document.querySelectorAll('[data-example]');
 const dictionaryCategorySelect = document.querySelector('#dictionary-category');
 const dictionaryWordSelect = document.querySelector('#dictionary-word');
@@ -106,9 +106,6 @@ let savedRecordings = [];
 let savedListRequestId = 0;
 let savedPreviewRequestId = 0;
 let selectedSavedRecordingId = null;
-let localDictionaryPreviewObjectUrl = null;
-let localDictionaryPreviewRequestId = 0;
-let selectedLocalDictionaryRecordingId = null;
 let activeDictionaryMode = 'search';
 let activeFreeTextQuery = '';
 let localRecordingsLoading = false;
@@ -124,6 +121,42 @@ let cameraRequestPending = false;
 let cameraRequestId = 0;
 let capturePageActive = true;
 const captureStore = createCaptureStore();
+const localVideoLoader = createLocalVideoLoader({
+  get: (id) => captureStore.get(id),
+  maxConcurrent: 2,
+  maxLiveUrls: 4
+});
+let localVideoObserver = null;
+
+function disconnectLocalVideoObserver() {
+  localVideoObserver?.disconnect();
+  localVideoObserver = null;
+}
+
+function clearLocalDictionaryVideos() {
+  disconnectLocalVideoObserver();
+  localVideoLoader.clear();
+}
+
+function observeLocalDictionaryVideo(record) {
+  if (typeof IntersectionObserver !== 'function') {
+    // The first few cards are the practical visible fallback; focus still prepares any later card.
+    if (localDictionaryList.children.length <= 4) localVideoLoader.prepare(record);
+    return;
+  }
+  if (!localVideoObserver) {
+    localVideoObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const localRecord = entry.target.localVideoRecord;
+        if (!localRecord) continue;
+        if (entry.isIntersecting) localVideoLoader.prepare(localRecord);
+        else localVideoLoader.release(localRecord);
+      }
+    }, { rootMargin: '400px 0px' });
+  }
+  record.video.localVideoRecord = record;
+  localVideoObserver.observe(record.video);
+}
 
 function createElement(tagName, className, text) {
   const element = document.createElement(tagName);
@@ -275,23 +308,6 @@ function renderUnknown(result) {
   }
 }
 
-function revokeLocalDictionaryPreviewUrl() {
-  if (localDictionaryPreviewObjectUrl) {
-    URL.revokeObjectURL(localDictionaryPreviewObjectUrl);
-    localDictionaryPreviewObjectUrl = null;
-  }
-}
-
-function clearLocalDictionaryPreview() {
-  localDictionaryPreviewRequestId += 1;
-  selectedLocalDictionaryRecordingId = null;
-  localDictionaryVideo.pause?.();
-  localDictionaryVideo.hidden = true;
-  localDictionaryVideo.removeAttribute('src');
-  localDictionaryVideo.load();
-  revokeLocalDictionaryPreviewUrl();
-}
-
 function renderLocalDictionaryResults(result) {
   const state = getLocalDictionaryViewState({
     tokens: result.tokens,
@@ -299,6 +315,7 @@ function renderLocalDictionaryResults(result) {
     loading: localRecordingsLoading,
     unavailable: localRecordingsUnavailable
   });
+  clearLocalDictionaryVideos();
   localDictionaryPanel.hidden = !state.visible;
   clearChildren(localDictionaryList);
   localDictionaryStatus.textContent = state.message;
@@ -313,57 +330,33 @@ function renderLocalDictionaryResults(result) {
     header.appendChild(createElement('span', 'local-badge', 'Local, sin validar'));
     card.appendChild(header);
     card.appendChild(createElement('p', 'unavailable', 'Este clip fue guardado por vos en este navegador. No forma parte del catálogo ni valida una seña LSB.'));
-    const playButton = createElement('button', 'local-play-button', 'Reproducir clip local');
-    playButton.type = 'button';
-    playButton.addEventListener('click', () => { void playLocalDictionaryRecording(match.id, match.label); });
-    card.appendChild(playButton);
+    const video = document.createElement('video');
+    const status = createElement('p', 'local-video-status meta', 'El clip se preparará cerca de la pantalla.');
+    status.setAttribute('role', 'status');
+    video.className = 'entry-video';
+    video.controls = true;
+    video.preload = 'metadata';
+    video.setAttribute('aria-label', `Clip local sin validar: ${match.label}`);
+    const record = localVideoLoader.register({
+      id: match.id,
+      video,
+      onStatus: ({ state, message }) => {
+        if (message) status.textContent = message;
+        if (state === 'missing') void loadSavedRecordings();
+      }
+    });
+    video.addEventListener('error', () => {
+      status.textContent = 'No se pudo cargar o decodificar este clip local en el navegador.';
+    });
+    card.append(video, status);
     localDictionaryList.appendChild(card);
-  }
-}
-
-async function playLocalDictionaryRecording(id, label) {
-  clearLocalDictionaryPreview();
-  const requestId = localDictionaryPreviewRequestId + 1;
-  localDictionaryPreviewRequestId = requestId;
-  selectedLocalDictionaryRecordingId = id;
-  localDictionaryStatus.textContent = 'Cargando el clip local para reproducirlo…';
-  try {
-    const entry = await captureStore.get(id);
-    if (requestId !== localDictionaryPreviewRequestId || selectedLocalDictionaryRecordingId !== id) return;
-    if (!entry) {
-      localDictionaryStatus.textContent = 'El clip ya no está disponible. Actualizando las señas guardadas.';
-      void loadSavedRecordings();
-      return;
-    }
-    revokeLocalDictionaryPreviewUrl();
-    localDictionaryPreviewObjectUrl = URL.createObjectURL(entry.video);
-    localDictionaryVideo.src = localDictionaryPreviewObjectUrl;
-    localDictionaryVideo.hidden = false;
-    localDictionaryVideo.setAttribute('aria-label', `Clip local sin validar: ${label}`);
-    localDictionaryStatus.textContent = `Clip local “${label}” listo. Iniciando reproducción…`;
-    const playback = await revealAndPlaySavedPreview(localDictionaryVideo);
-    if (requestId !== localDictionaryPreviewRequestId || selectedLocalDictionaryRecordingId !== id) return;
-    if (playback.outcome === 'playing') {
-      localDictionaryStatus.textContent = `Reproduciendo localmente “${label}”.`;
-    } else if (playback.outcome === 'blocked') {
-      localDictionaryStatus.textContent = `No se pudo iniciar “${label}” automáticamente. Usá los controles del video para reproducirlo.`;
-    } else if (playback.outcome === 'unsupported') {
-      localDictionaryStatus.textContent = `Este navegador no admite el formato de “${label}”. Probá los controles del video o un navegador compatible.`;
-    } else {
-      localDictionaryStatus.textContent = `No se pudo iniciar “${label}” automáticamente. El clip sigue disponible en los controles del video.`;
-    }
-  } catch (error) {
-    if (requestId !== localDictionaryPreviewRequestId || selectedLocalDictionaryRecordingId !== id) return;
-    localDictionaryStatus.textContent = error?.code === 'unavailable'
-      ? 'El almacenamiento local no está disponible para reproducir esta seña.'
-      : 'No se pudo cargar el clip local. Probá de nuevo o usá la lista de señas guardadas.';
+    observeLocalDictionaryVideo(record);
   }
 }
 
 function renderResult(inputText) {
   activeDictionaryMode = 'search';
   activeFreeTextQuery = inputText;
-  clearLocalDictionaryPreview();
   const result = lookupWithLocalRecordings(inputText, savedRecordings);
   const curatedResult = { ...result, recognized: result.curatedRecognized };
   const curatedCount = result.curatedRecognized.length;
@@ -393,7 +386,7 @@ function refreshActiveFreeTextSearch() {
 function renderSelectedDictionaryEntry(entry) {
   activeDictionaryMode = 'selection';
   activeFreeTextQuery = '';
-  clearLocalDictionaryPreview();
+  clearLocalDictionaryVideos();
   localDictionaryPanel.hidden = true;
   const result = {
     tokens: [entry.label],
@@ -870,14 +863,9 @@ async function deleteSavedRecording(id) {
     invalidateSavedPreviewSelection();
     showPendingPreview();
   }
-  if (selectedLocalDictionaryRecordingId === id) {
-    clearLocalDictionaryPreview();
-  }
+  clearLocalDictionaryVideos();
   try {
     await captureStore.delete(id);
-    if (selectedLocalDictionaryRecordingId === id) {
-      clearLocalDictionaryPreview();
-    }
     setCaptureStatus('La seña se eliminó de este navegador.');
     await loadSavedRecordings();
   } catch (error) {
@@ -1356,7 +1344,7 @@ captureCategorySelect.addEventListener('change', () => {
 catalogLabelSelect.addEventListener('change', syncCaptureButtons);
 customLabelInput.addEventListener('input', syncCaptureButtons);
 function cleanupCaptureOnPageExit() {
-  clearLocalDictionaryPreview();
+  clearLocalDictionaryVideos();
   capturePageActive = false;
   cameraRequestId += 1;
   cameraRequestPending = false;
