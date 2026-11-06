@@ -111,6 +111,7 @@ export function lookupText(input, catalog = STARTER_CATALOG) {
   const tokens = tokenizeText(input);
   const { phrases, longestPhraseLength } = createPhraseLexicon(catalog);
   const recognized = [];
+  const matches = [];
   const unknown = [];
 
   for (let index = 0; index < tokens.length;) {
@@ -127,6 +128,7 @@ export function lookupText(input, catalog = STARTER_CATALOG) {
     }
 
     if (match) {
+      matches.push({ token: match.token, entries: [...match.entries], length: match.length });
       for (const entry of match.entries) {
         recognized.push({ token: match.token, entry });
       }
@@ -141,6 +143,7 @@ export function lookupText(input, catalog = STARTER_CATALOG) {
     originalText: String(input ?? ''),
     tokens,
     recognized,
+    matches,
     unknown
   };
 }

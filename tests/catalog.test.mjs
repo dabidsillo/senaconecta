@@ -119,6 +119,17 @@ test('lookupText recognizes current multiword phrases in order and leaves only u
   assert.deepEqual(result.unknown, ['amigo', 'misterio']);
 });
 
+test('lookupText exposes occurrence boundaries without changing recognized output', () => {
+  const result = lookupText('hola hola lo siento');
+
+  assert.deepEqual(result.matches.map((match) => [match.token, match.length, match.entries.map((entry) => entry.displayLabel)]), [
+    ['hola', 1, ['Hola']],
+    ['hola', 1, ['Hola']],
+    ['lo siento', 2, ['Lo siento']]
+  ]);
+  assert.deepEqual(result.recognized.map((item) => item.entry.displayLabel), ['Hola', 'Hola', 'Lo siento']);
+});
+
 test('lookupText resolves Papá uniquely after removing the Papa vegetable', () => {
   const result = lookupText('papa');
 
