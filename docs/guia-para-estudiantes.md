@@ -26,7 +26,7 @@ Esta guía te ayuda a mostrar Tinku aunque no programes. No tenés que memorizar
 | --- | --- |
 | Busca etiquetas de texto y permite elegir categoría y palabra. | No reconoce movimientos ni traduce señas a texto. |
 | Organiza 45 entradas con videos WebM VP8 en 9 categorías. | No verifica independientemente que un video sea una seña LSB válida ni afirma despliegue real. |
-| Propone práctica textual por categoría. | No guarda el avance de práctica al recargar o cerrar la página. |
+| Muestra un video público del catálogo y propone respuestas de texto por categoría. | No guarda el avance de práctica al recargar o cerrar la página. |
 | Graba, si das permiso, clips de hasta 15 segundos. | No descarga video ni JSON, no sube clips y no crea cuentas. |
 | Guarda un clip solo al pulsar **Guardar seña**. | No lo agrega automáticamente al catálogo ni lo comparte. |
 | Permite reproducir o eliminar los clips guardados. | No agrega esos clips de Mis señas al catálogo ni los valida. |
@@ -62,7 +62,7 @@ Al elegir **Reproducir frase**, la frase sigue el orden escrito. Solo en ese mom
 
 ### 2. Lecciones
 
-Deslizá horizontalmente las tarjetas o usá **Anterior** y **Siguiente**. Elegí una categoría y respondé la práctica textual. Si recargás la página, el avance se reinicia porque vive solamente en la memoria de esa pestaña. Eso es intencional: no hay cuenta ni perfil.
+Deslizá horizontalmente las tarjetas o usá **Anterior** y **Siguiente**. Elegí una categoría, reproducí el video público de la seña y recién entonces elegí una respuesta de texto. Si falta o falla el video, no aparecen respuestas para evitar adivinar sin ver una seña. Si recargás la página, el avance se reinicia porque vive solamente en la memoria de esa pestaña. Eso es intencional: no hay cuenta ni perfil.
 
 ### 3. Cámara y guardado local
 
@@ -84,7 +84,7 @@ Si usás Windows, podés probar `iniciar-tinku.bat` con Python 3 instalado; toda
 
 ## Preguntas que pueden hacerte
 
-**¿Tinku traduce señas?** No. El prototipo busca etiquetas de texto, practica con texto y puede grabar clips etiquetados.
+**¿Tinku traduce señas?** No. El prototipo busca etiquetas de texto, muestra videos públicos para practicar y puede grabar clips etiquetados.
 
 **¿La cámara reconoce si hice bien una seña?** No. Solo graba el clip que vos decidís capturar; una etiqueta no es una evaluación automática.
 

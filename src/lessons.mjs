@@ -37,16 +37,23 @@ export function getPracticePrompt(session, lesson) {
 
   return {
     answerId: entry.id,
+    videoPath: entry.videoPath,
     stepNumber: session.currentIndex + 1,
     totalSteps: lesson.entries.length,
-    label: entry.displayLabel,
-    description: entry.description,
     options: lesson.entries.map((option) => ({
       id: option.id,
       label: option.displayLabel,
       category: option.category
     }))
   };
+}
+
+export function getPracticeMediaState(prompt) {
+  const videoPath = typeof prompt?.videoPath === 'string' ? prompt.videoPath.trim() : '';
+
+  return videoPath
+    ? { available: true, videoPath, message: '' }
+    : { available: false, videoPath: null, message: 'Video no disponible para este paso.' };
 }
 
 export function answerPracticeStep(session, lesson, selectedEntryId) {

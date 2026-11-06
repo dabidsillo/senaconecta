@@ -5,6 +5,7 @@ import {
   answerPracticeStep,
   buildBeginnerLessons,
   createPracticeSession,
+  getPracticeMediaState,
   getPracticePrompt
 } from '../src/lessons.mjs';
 
@@ -60,12 +61,41 @@ test('practice session tracks progress in memory without mutating lesson data', 
   assert.equal(session.completed, false);
   assert.equal(prompt.options.length, lesson.entries.length);
   assert.equal(prompt.answerId, lesson.entries[0].id);
+  assert.equal(prompt.videoPath, lesson.entries[0].videoPath);
+  assert.equal(Object.hasOwn(prompt, 'label'), false);
 
   const answered = answerPracticeStep(session, lesson, prompt.answerId);
   assert.equal(answered.correct, true);
   assert.equal(answered.nextSession.correctCount, 1);
   assert.equal(answered.nextSession.currentIndex, 1);
   assert.equal(session.correctCount, 0);
+});
+
+test('practice media state withholds answers when a catalog video is missing', () => {
+  assert.deepEqual(getPracticeMediaState({ videoPath: '' }), {
+    available: false,
+    videoPath: null,
+    message: 'Video no disponible para este paso.'
+  });
+  assert.deepEqual(getPracticeMediaState({ videoPath: './assets/catalog/example.webm' }), {
+    available: true,
+    videoPath: './assets/catalog/example.webm',
+    message: ''
+  });
+});
+
+test('incorrect practice answers retain the current step without revealing its ID', () => {
+  const [lesson] = buildBeginnerLessons(STARTER_CATALOG);
+  const session = createPracticeSession(lesson);
+  const wrongOption = lesson.entries[1];
+  const result = answerPracticeStep(session, lesson, wrongOption.id);
+
+  assert.equal(result.correct, false);
+  assert.equal(result.nextSession.currentIndex, 0);
+  assert.equal(result.nextSession.correctCount, 0);
+  assert.equal(result.nextSession.completed, false);
+  assert.equal(result.nextSession.lastResult.selectedEntryId, wrongOption.id);
+  assert.equal(result.nextSession.lastResult.expectedId, lesson.entries[0].id);
 });
 
 test('practice session reports completion only for the current browser session', () => {

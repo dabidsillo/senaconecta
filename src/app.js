@@ -13,6 +13,7 @@ import {
   answerPracticeStep,
   buildBeginnerLessons,
   createPracticeSession,
+  getPracticeMediaState,
   getPracticePrompt
 } from './lessons.mjs';
 import {
@@ -86,6 +87,7 @@ const metadataPreview = document.querySelector('#metadata-preview');
 const beginnerLessons = buildBeginnerLessons(STARTER_CATALOG);
 let selectedLesson = beginnerLessons[0] ?? null;
 let practiceSession = selectedLesson ? createPracticeSession(selectedLesson) : null;
+let practiceRenderId = 0;
 let playbackSequence = [];
 const phrasePlayback = createPhrasePlaybackSession();
 let phraseLocalSource = null;
@@ -559,11 +561,45 @@ function renderPracticeFeedback() {
 
   const message = practiceSession.lastResult.correct
     ? 'Respuesta correcta. Avanzaste al siguiente paso.'
-    : 'Todavía no. Probá de nuevo con la misma etiqueta.';
-  practiceCard.appendChild(createElement('p', 'summary', message));
+    : 'Todavía no. Mirá la seña y probá otra vez.';
+  const feedback = practiceCard.querySelector('.practice-feedback');
+  if (feedback) {
+    feedback.textContent = message;
+    return;
+  }
+  practiceCard.appendChild(createElement('p', 'summary practice-feedback', message));
+}
+
+function appendPracticeOptions(prompt, renderId) {
+  const options = createElement('div', 'practice-options');
+  for (const option of prompt.options) {
+    const button = createElement('button', null, option.label);
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      if (renderId !== practiceRenderId) return;
+      const result = answerPracticeStep(practiceSession, selectedLesson, option.id);
+      practiceSession = result.nextSession;
+      if (result.correct) {
+        renderPractice();
+      } else {
+        renderPracticeFeedback();
+      }
+    });
+    options.appendChild(button);
+  }
+  practiceCard.appendChild(options);
+  return options;
+}
+
+function appendPracticeMissingMedia(message) {
+  const placeholder = createElement('div', 'video-placeholder', message);
+  placeholder.setAttribute('role', 'status');
+  practiceCard.appendChild(placeholder);
 }
 
 function renderPractice() {
+  const renderId = ++practiceRenderId;
+  practiceCard.querySelector('video')?.pause();
   clearChildren(practiceCard);
 
   if (!selectedLesson || !practiceSession) {
@@ -595,23 +631,40 @@ function renderPractice() {
   }
 
   practiceStatus.textContent = `Paso ${prompt.stepNumber} de ${prompt.totalSteps}. Aciertos en sesión: ${practiceSession.correctCount}.`;
-  practiceCard.appendChild(createElement('p', 'meta', 'Seleccioná la tarjeta que coincide con esta etiqueta del catálogo:'));
-  practiceCard.appendChild(createElement('h3', null, prompt.label));
-  practiceCard.appendChild(createElement('p', 'unavailable', 'No se muestran movimientos ni videos inventados; esta práctica solo reconoce etiquetas textuales.'));
+  practiceCard.appendChild(createElement('p', 'meta', 'Reproducí la seña y elegí la etiqueta correspondiente.'));
 
-  const options = createElement('div', 'practice-options');
-  for (const option of prompt.options) {
-    const button = createElement('button', null, option.label);
-    button.type = 'button';
-    button.addEventListener('click', () => {
-      const result = answerPracticeStep(practiceSession, selectedLesson, option.id);
-      practiceSession = result.nextSession;
-      renderPractice();
-    });
-    options.appendChild(button);
+  const media = getPracticeMediaState(prompt);
+  if (!media.available) {
+    appendPracticeMissingMedia(media.message);
+    return;
   }
-  practiceCard.appendChild(options);
-  renderPracticeFeedback();
+
+  const video = document.createElement('video');
+  const mediaStatus = createElement('p', 'meta', 'Reproducí el video para habilitar las respuestas.');
+  let mediaFailed = false;
+  let options = null;
+  video.className = 'entry-video';
+  video.controls = true;
+  video.preload = 'metadata';
+  video.src = media.videoPath;
+  video.setAttribute('aria-label', 'Video de práctica');
+  mediaStatus.setAttribute('role', 'status');
+  video.addEventListener('playing', () => {
+    if (mediaFailed || renderId !== practiceRenderId || !practiceCard.contains(video) || options) return;
+    mediaStatus.textContent = 'Podés responder cuando identifiques la seña.';
+    options = appendPracticeOptions(prompt, renderId);
+    renderPracticeFeedback();
+  });
+  video.addEventListener('error', () => {
+    if (renderId !== practiceRenderId || !practiceCard.contains(video)) return;
+    mediaFailed = true;
+    options?.remove();
+    options = null;
+    video.hidden = true;
+    mediaStatus.remove();
+    appendPracticeMissingMedia('No se pudo reproducir el video para este paso.');
+  });
+  practiceCard.append(video, mediaStatus);
 }
 
 function setCaptureStatus(message) {

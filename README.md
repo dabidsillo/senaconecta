@@ -31,7 +31,7 @@ Every current entry in `src/catalog.mjs` has a document-relative `videoPath` und
 1. From this directory run `python3 -m http.server 8000 --bind 127.0.0.1`.
 2. Open `http://localhost:8000` in a modern browser.
 3. In **Diccionario**, choose a category and label, or use the suggested searches `Hola, mamá`, `Lo siento, papá`, and `Por favor, amigo`. The last one intentionally leaves `amigo` unmatched.
-4. In **Lecciones**, move through the 9 categories and answer text-only practice prompts. Reload to see that practice progress resets.
+4. In **Lecciones**, play each public catalog sign video before choosing its text answer. Reload to see that practice progress resets.
 5. In **Cámara**, choose for example `Familia` → `Papá`, or enter a custom label. Allow camera access only if you choose to record. A recording stops after at most 15 seconds; then select **Guardar seña** if you want to retain it locally.
 
 ### Windows (double-click)
@@ -55,7 +55,7 @@ Get appropriate consent before recording anyone, especially minors. Do not proje
 
 The dictionary selector and lessons read only `src/catalog.mjs`. After you deliberately choose **Reproducir frase**, a free-text phrase plays its planned videos in written lookup order and stops after the last clip; it never starts on its own. A saved browser-local clip is an opt-in fallback only when its exact label has no playable public catalog video; the newest duplicate is used, and a public video always wins. The local Blob is read only when that explicit playback reaches its step, never during phrase search, and a missing, unreadable, or unsupported local clip stops the phrase instead of skipping ahead. It remains unvalidated and never changes the catalog, selectors, lessons, or standalone catalog/native **Mis señas** controls. Search matches only saved-recording metadata; after results render, nearby **Mis señas** cards lazily load their browser-local Blob for their own native controls, with bounded concurrent reads and URLs. Search is independent of exact category selection and can recognize catalog phrases such as `Lo siento` or `Santa Cruz`. Each catalog entry has a linked public WebM asset; **Mis señas** remains separate browser-local data and does not change catalog review status.
 
-Lessons are generated from the shared categories. Practice state exists only in JavaScript memory for the current tab, so refreshing or closing the page loses it by design. Saved recordings are separate browser-local data and can remain after a reload.
+Lessons are generated from the shared categories. Each practice step uses its public catalog video as the question and enables the text answers only after playback begins; a missing or failed video withholds answers. Practice state exists only in JavaScript memory for the current tab, so refreshing or closing the page loses it by design. Saved recordings are separate browser-local data and can remain after a reload.
 
 The ignored source collection and its JSON files remain private and must stay outside any public build. Git ignore rules do **not** prevent a web server pointed at the repository root from serving private files to anyone who can reach it. For any public deployment, use an explicit allowlist containing only `index.html`, public styles and JavaScript modules required by the app, intentionally selected public documentation, and `assets/catalog/*.webm`; never deploy the repository root, the ignored source collection, or its JSON. The owner-attested media status does not replace a real review by qualified LSB creators or collaborators.
 
