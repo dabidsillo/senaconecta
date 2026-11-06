@@ -25,6 +25,11 @@
   box-sizing: border-box;
 }
 
+/* Author display rules for panels and placeholders must not override hidden. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
 }
